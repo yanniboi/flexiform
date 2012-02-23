@@ -208,7 +208,7 @@ function flexiform_access($op, $type = NULL, $account = NULL) {
 function flexiform_get_flexiforms($flexiform_name = NULL) {
   // entity_load will get the Entity controller for our flexiform_submission entity and call the load
   // function of that object - we are loading entities by name here.
-  $flexiforms = entity_load_multiple_by_name('flexiform', isset($type_name) ? array($type_name) : FALSE);
+  $flexiforms = entity_load_multiple_by_name('flexiform', isset($flexiform_name) ? array($flexiform_name) : FALSE);
   return isset($flexiform_name) ? reset($flexiforms) : $flexiforms;
 }
 

@@ -172,7 +172,11 @@ function flexiform_submission_delete_form_wrapper($flexiform_submission) {
  */
 function flexiform_submission_edit_form($form, &$form_state, $flexiform_submission) {  
   global $user;
+  module_load_include('inc', 'flexiform', 'includes/flexiform.flexiform');
 
+  $flexiform = flexiform_load($flexiform_submission->form);
+  $form_state['entities'] = flexiform_prepare_entities($flexiform, $flexiform_submission);
+  
   // User field  
   $form['user'] = array(
     '#type' => 'value',

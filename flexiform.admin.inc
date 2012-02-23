@@ -77,6 +77,16 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
  */
 function flexiform_form_submit(&$form, &$form_state) {
   $flexiform = entity_ui_form_submit_build_entity($form, $form_state);
+  
+  $flexiform->entities = array(
+    'this_submission' => array(
+      'entity_type' => 'flexiform_submission',
+      'bundle' => $flexiform->form,
+      'create' => TRUE,
+      'getter_callback' => 'flexiform_entity_getter_this_submission',
+    ),
+  );
+  
   $flexiform->save();
   $form_state['redirect'] = 'admin/structure/flexiforms';
 }

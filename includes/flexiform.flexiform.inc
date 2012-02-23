@@ -5,6 +5,38 @@
  */
  
 /**
+ * Prepare the entities needed for the form, either by creating or loading
+ *
+ * @param $flexiform
+ *  The form definition
+ * @param $flexiform_submission
+ *  The Current Submission
+ *
+ * @return
+ *  An array of entities keyed by namespace
+ */
+function flexiform_prepare_entities($flexiform, $submission) {
+  $current_entities = $submission->entities;
+  
+  $entities = array();
+  foreach($flexiform->entities as $namespace => $info) {
+    // If the id is already set on the submission entities...
+    if (isset($current_entities[$namespace])) {
+      // ...load that entity and continue
+      $entities[$namespace] = entity_load($info['entity_type'], $current_entities[$namespace]);
+      continue;
+    }
+        
+    if (isset($info['getter_callback']) && function_exists($info['getter_callback'])) {
+      $callback = $info['getter_callback'];
+      $entities[$namespace] = $callback($flexiform, $submission, $namespace, $entities);
+    }
+  }
+  
+  return $entities;
+}
+ 
+/**
  * Add fields from an entity to the form based on settings in the $fields array.
  *
  * @param $entity_type
@@ -20,14 +52,7 @@
  */ 
 function flexiform_embed_entity_fields($entity_type, $entity, $fields, &$form, &$form_state) {
   // Sniff out bundle
-  $info = entity_get_info($entity_type);
-  $bundle_key = empty($info['entity keys']['bundle']) ? FALSE : $info['entity keys']['bundle'];
-  if (!$bundle_key) {
-    $bundle = $entity_type;
-  }
-  else {
-    $bundle = $entity->{$bundle_key};
-  }
+  $bundle = _flexiform_get_bundle($entity_type, $entity);
   
   // Set up our form bits
   $entity_namespace = flexiform_get_entity_namespace($entity_type, $entity);
@@ -139,3 +164,31 @@ function flexiform_get_entity_namespace_fields($entity_namespace, $form) {
   
   return $entity_form;
 }
+
+/**
+ * Get the bundle key for an entity type
+ */
+function _flexiform_get_bundle_key($entity_type) {
+  $info = entity_get_info($entity_type);
+  return empty($info['entity keys']['bundle']) ? FALSE : $info['entity keys']['bundle'];
+}
+
+/**
+ * Get the bundle for an entity type and entity
+ */
+function _flexiform_get_bundle($entity_type, $entity) {
+  $bundle_key = _flexiform_get_bundle_key($entity_type);
+  if (!$bundle_key) {
+    return $entity_type;
+  }
+  else {
+    return $entity->{$bundle_key};
+  }
+}
+
+/**
+ * Getter callback for 'this submission'
+ */
+function flexiform_entity_getter_this_submission($flexiform, $submission, $namespace, $entities) {
+  return $submission;
+} 
