@@ -59,16 +59,6 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
     '#weight' => 40,
   );
 
-  //Locking not supported yet
-  /*if (!$flexiform->isLocked() && $op != 'add') {
-    $form['actions']['delete'] = array(
-      '#type' => 'submit',
-      '#value' => t('Delete model type'),
-      '#weight' => 45,
-      '#limit_validation_errors' => array(),
-      '#submit' => array('flexiform_form_submit_delete')
-    );
-  }*/
   return $form;
 }
 
@@ -84,6 +74,20 @@ function flexiform_form_submit(&$form, &$form_state) {
       'bundle' => $flexiform->form,
       'create' => TRUE,
       'getter_callback' => 'flexiform_entity_getter_this_submission',
+    ),
+  );
+  
+  // Temp till a UI gets build
+  $flexiform->fields = array(
+    'this_submission' => array(
+      'field_test_field' => array(
+        'instance' => array(
+          'label' => 'Proof',
+          'widget' => array(
+            'weight' => 400,
+          ),
+        ),
+      ),
     ),
   );
   

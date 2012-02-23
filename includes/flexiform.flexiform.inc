@@ -39,6 +39,8 @@ function flexiform_prepare_entities($flexiform, $submission) {
 /**
  * Add fields from an entity to the form based on settings in the $fields array.
  *
+ * @param $entity_namespace
+ *  The namespace for this entity in this form
  * @param $entity_type
  *  The entity type e.g. node,user or taxonomy term
  * @param $entity
@@ -50,12 +52,11 @@ function flexiform_prepare_entities($flexiform, $submission) {
  * @param $form
  * @param $form_state
  */ 
-function flexiform_embed_entity_fields($entity_type, $entity, $fields, &$form, &$form_state) {
+function flexiform_embed_entity_fields($entity_namespace, $entity_type, $entity, $fields, &$form, &$form_state) {
   // Sniff out bundle
   $bundle = _flexiform_get_bundle($entity_type, $entity);
   
   // Set up our form bits
-  $entity_namespace = flexiform_get_entity_namespace($entity_type, $entity);
   if (!isset($form['#parents'])) {
     $form['#parents'] = array();
   }

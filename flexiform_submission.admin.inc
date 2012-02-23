@@ -174,8 +174,20 @@ function flexiform_submission_edit_form($form, &$form_state, $flexiform_submissi
   global $user;
   module_load_include('inc', 'flexiform', 'includes/flexiform.flexiform');
 
+  // Load the flexiform objects and prepare the entities it expects
   $flexiform = flexiform_load($flexiform_submission->form);
+  $form_state['flexiform'] = $flexiform;
   $form_state['entities'] = flexiform_prepare_entities($flexiform, $flexiform_submission);
+  
+  foreach($form_state['entities'] as $namespace => $entity) {
+    $fields = isset($flexiform->fields[$namespace]) ? $flexiform->fields[$namespace] : FALSE;
+    if (!$fields) {
+      continue;
+    }
+    
+    $info = $flexiform->entities[$namespace];
+    flexiform_embed_entity_fields($namespace, $info['entity_type'], $entity, $fields, $form, $form_state); 
+  }
   
   // User field  
   $form['user'] = array(
@@ -241,6 +253,13 @@ function flexiform_submission_edit_form_validate(&$form, &$form_state) {
  * @todo remove hard-coded link
  */
 function flexiform_submission_edit_form_submit(&$form, &$form_state) {
+  $flexiform = $form_state['flexiform'];  
+  foreach ($form_state['entities'] as $namespace => $entity) {
+    $info = $flexiform->entities[$namespace];
+    $namespace_fields = flexiform_get_entity_namespace_fields($entity_namespace, $form);
+    field_attach_submit($info['entity_type'], $entity, $namespace_fields, $form_state);
+    entity_save($info['entity_type'], $entity);
+  }
   
   $flexiform_submission = entity_ui_controller('flexiform_submission')->entityFormSubmitBuildEntity($form, $form_state);
   // Save the flexiform_submission and go back to the list of flexiform_submissions
