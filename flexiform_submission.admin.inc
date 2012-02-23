@@ -37,9 +37,9 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
     $items[$this->path]['type'] = MENU_LOCAL_TASK;
     
     // Change the add page menu to multiple types of entities
-    $items[$this->path . '/add'] = array(
-      'title' => 'Add a Flexiform Submission',
-      'description' => 'Add a new flexiform_submission',
+    $items['flexiform'] = array(
+      'title' => 'Submit a Flexiform',
+      'description' => 'Fill out and Submit a Flexiform',
       'page callback'  => 'flexiform_submission_add_page',
       'access callback'  => 'flexiform_submission_access',
       'access arguments' => array('edit'),
@@ -52,7 +52,7 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
     
     // Add menu items to add each different type of entity.
     foreach (flexiform_get_flexiforms() as $form) {
-      $items[$this->path . '/add/' . $form->form] = array(
+      $items['flexiform/' . $form->form] = array(
         'title' => 'Add ' . $form->label,
         'page callback' => 'flexiform_submission_form_wrapper',
         'page arguments' => array(flexiform_submission_create(array('form' => $form->form))),
@@ -61,50 +61,52 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
         'file' => 'flexiform_submission.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module'])
       );
+      
+      // Loading and editing flexiform_submission entities
+      $items['flexiform/' . $form->form . '/' . $wildcard] = array(
+        'title callback' => 'flexiform_submission_page_title',
+        'title arguments' => array(2),
+        'page callback' => 'flexiform_submission_page_view',
+        'page arguments' => array(2),
+        'access callback' => 'flexiform_submission_access',
+        'access arguments' => array('view', 2),
+        'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+        'file' => 'flexiform_submission.admin.inc',
+        'file path' => drupal_get_path('module', $this->entityInfo['module'])
+      );
+      
+      // Menu item for viewing flexiform_submissions
+      $items['flexiform/' . $form->form . '/' . $wildcard . '/view'] = array(
+        'title' => 'View',
+        'weight' => -10,        
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+      );
+      
+      $items['flexiform/' . $form->form . '/' . $wildcard . '/edit'] = array(
+        'title' => 'Edit',
+        'page callback' => 'flexiform_submission_form_wrapper',
+        'page arguments' => array(2),
+        'access callback' => 'flexiform_submission_access',
+        'access arguments' => array('edit', 2),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 0,
+        'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+      );
+      
+      $items['flexiform/' . $form->form . '/' . $wildcard . '/delete'] = array(
+        'title' => 'Delete',
+        'page callback' => 'flexiform_submission_delete_form_wrapper',
+        'page arguments' => array(2),
+        'access callback' => 'flexiform_submission_access',
+        'access arguments' => array('edit', 2),
+        'type' => MENU_LOCAL_TASK,
+        'context' => MENU_CONTEXT_INLINE,
+        'weight' => 10,
+        'file' => 'flexiform_submission.admin.inc',
+        'file path' => drupal_get_path('module', $this->entityInfo['module'])
+      );
     }
 
-    // Loading and editing flexiform_submission entities
-    $items[$this->path . '/flexiform_submission/' . $wildcard] = array(
-      'page callback' => 'flexiform_submission_form_wrapper',
-      'page arguments' => array($id_count + 1),
-      'access callback' => 'flexiform_submission_access',
-      'access arguments' => array('edit', $id_count + 1),
-      'weight' => 0,
-      'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
-      'file' => 'flexiform_submission.admin.inc',
-      'file path' => drupal_get_path('module', $this->entityInfo['module'])
-    );
-    $items[$this->path . '/flexiform_submission/' . $wildcard . '/edit'] = array(
-      'title' => 'Edit',
-      'type' => MENU_DEFAULT_LOCAL_TASK,
-      'weight' => -10,
-      'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
-    );
-    
-    $items[$this->path . '/flexiform_submission/' . $wildcard . '/delete'] = array(
-      'title' => 'Delete',
-      'page callback' => 'flexiform_submission_delete_form_wrapper',
-      'page arguments' => array($id_count + 1),
-      'access callback' => 'flexiform_submission_access',
-      'access arguments' => array('edit', $id_count + 1),
-      'type' => MENU_LOCAL_TASK,
-      'context' => MENU_CONTEXT_INLINE,
-      'weight' => 10,
-      'file' => 'flexiform_submission.admin.inc',
-      'file path' => drupal_get_path('module', $this->entityInfo['module'])
-    );
-    
-    // Menu item for viewing flexiform_submissions
-    $items['flexiform_submission/' . $wildcard] = array(
-      //'title' => 'Title',
-      'title callback' => 'flexiform_submission_page_title',
-      'title arguments' => array(1),
-      'page callback' => 'flexiform_submission_page_view',
-      'page arguments' => array(1),
-      'access callback' => 'flexiform_submission_access',
-      'access arguments' => array('view', 1),
-      'type' => MENU_CALLBACK,
-    );
     return $items;
   }
   
@@ -115,8 +117,11 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
    */ 
   public function addPage() {
     $item = menu_get_item();
-    $content = system_admin_menu_block($item);
-
+    $content = array();
+    foreach(flexiform_get_flexiforms() as $form) {
+      $content[] = menu_get_item('flexiform/'.$form->form);
+    }
+    
     if (count($content) == 1) {
       $item = array_shift($content);
       drupal_goto($item['href']);

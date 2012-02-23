@@ -369,7 +369,7 @@ function flexiform_theme() {
 function flexiform_menu_local_tasks_alter(&$data, $router_item, $root_path) {
   // Add action link 'admin/structure/flexiform_submissions/add' on 'admin/structure/flexiform_submissions'.
   if ($root_path == 'admin/content/flexiform_submissions') {
-    $item = menu_get_item('admin/content/flexiform_submissions/add');
+    $item = menu_get_item('flexiform');
     if ($item['access']) {
       $data['actions']['output'][] = array(
         '#theme' => 'menu_local_action',
