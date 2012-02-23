@@ -47,7 +47,6 @@ class FlexiformSubmissionController extends EntityAPIController {
     $values += array( 
       'flexiform_submission_id' => '',
       'is_new' => TRUE,
-      'user' => 0,
       'entities' => array(),
       'created' => '',
       'changed' => '',

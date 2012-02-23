@@ -322,7 +322,7 @@ function flexiform_submission_uri(FlexiformSubmission $flexiform_submission){
  * Menu title callback for showing individual entities
  */
 function flexiform_submission_page_title(FlexiformSubmission $flexiform_submission){
-  return $flexiform_submission->name;
+  return entity_label('flexiform_submission', $flexiform_submission);
 }
 
 /**
@@ -332,7 +332,7 @@ function flexiform_submission_page_title(FlexiformSubmission $flexiform_submissi
 function flexiform_submission_page_view($flexiform_submission, $view_mode = 'full') {    
   $controller = entity_get_controller('flexiform_submission');  
   $content = $controller->view(array($flexiform_submission->flexiform_submission_id => $flexiform_submission));
-  drupal_set_title($flexiform_submission->name);
+  //drupal_set_title($flexiform_submission->name);
   return $content;
 }
 

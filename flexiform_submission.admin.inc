@@ -171,10 +171,18 @@ function flexiform_submission_delete_form_wrapper($flexiform_submission) {
  *     with only a flexiform_submission form defined.
  */
 function flexiform_submission_edit_form($form, &$form_state, $flexiform_submission) {  
+  global $user;
+
+  // User field  
+  $form['user'] = array(
+    '#type' => 'value',
+    '#value' => isset($flexiform_submission->user) ? $flexiform_submission->user : $user->uid,
+  );
+  
   // Add the field related form elements.
   $form_state['flexiform_submission'] = $flexiform_submission;
   field_attach_form('flexiform_submission', $flexiform_submission, $form, $form_state);
-
+  
   $form['actions'] = array(
     '#type' => 'container',
     '#attributes' => array('class' => array('form-actions')),
@@ -191,7 +199,7 @@ function flexiform_submission_edit_form($form, &$form_state, $flexiform_submissi
 
   $form['actions']['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Save flexiform_submission'),
+    '#value' => t('Save Flexiform'),
     '#submit' => $submit + array('flexiform_submission_edit_form_submit'),
   );
   
@@ -241,7 +249,7 @@ function flexiform_submission_edit_form_submit(&$form, &$form_state) {
   $flexiform_submission->changed = time();
   
   $flexiform_submission->save();
-  $form_state['redirect'] = 'admin/content/flexiform_submissions';
+  $form_state['redirect'] = 'flexiform/' . $flexiform_submission->form . '/' . $flexiform_submission->flexiform_submission_id;
 }
 
 /**
