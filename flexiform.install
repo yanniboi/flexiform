@@ -1,0 +1,121 @@
+<?php
+
+/**
+ * @file
+ * Sets up the base table for our entity and a table to store information about
+ * the entity types.
+ */
+
+
+/**
+ * Implements hook_schema().
+ */
+function flexiform_schema() {
+  $schema = array();
+
+  $schema['flexiform_submission'] = array(
+    'description' => 'The base table for flexiform_submission entities.',
+    'fields' => array(
+      'flexiform_submission_id' => array(
+        'description' => 'Primary Key: Identifier for a flexiform_submission.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'form' => array(
+        'description' => 'The {flexiform}.form of this flexiform_submission.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'language' => array(
+        'description' => 'The language of the flexiform_submission.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the flexiform_submission was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the flexiform_submission was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'user' => array(
+        'description' => 'The User whoe created this submission',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'entities' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of entities involved in this flexiform.',
+      ),
+    ),
+    'primary key' => array('flexiform_submission_id'),
+    'indexes' => array(
+      'type' => array('form'),
+    ),
+  );
+
+  $schema['flexiform'] = array(
+    'description' => 'Stores information about defined flexiforms.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique flexiform identifier.',
+      ),
+      'form' => array(
+        'description' => 'The machine-readable name of this flexiform.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'The human-readable name of this flexiform.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'The weight of this flexiform in relation to others.',
+      ),
+      'entities' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of entities involved in this flexiform.',
+      ),
+      'fields' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of fields related to this flexiform.',
+      ),
+    ) + entity_exportable_schema_fields(),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'form' => array('form'),
+    ),
+  );
+
+  return $schema;
+}
