@@ -158,7 +158,6 @@ function flexiform_manage_form_fields_form($form, &$form_state, $flexiform) {
   );
   
   $widget_types = field_info_widget_types();
-
   foreach($formfields as $field_namespace => $formfield) {
     $field = field_info_field($formfield['field_name']);
     $instance = field_info_instance($formfield['entity_type'], $formfield['field_name'], $formfield['bundle']);
@@ -168,7 +167,7 @@ function flexiform_manage_form_fields_form($form, &$form_state, $flexiform) {
     // figure here, so we should be fine.
     $forminstance = array_replace_recursive($instance, $formfield['instance']);
     
-    $field_path = '';
+    $field_path = 'admin/structure/flexiforms/manage/' . $flexiform->form . '/form-fields/' . $field_namespace;
     
     $table[$field_namespace] = array(
       '#attributes' => array('class' => array('draggable', 'tabledrag-leaf')),
@@ -222,7 +221,7 @@ function flexiform_manage_form_fields_form($form, &$form_state, $flexiform) {
       'remove' => array(
         '#type' => 'link',
         '#title' => t('remove'),
-        '#href' => $field_path,
+        '#href' => $field_path . '/remove',
         '#options' => array('attributes' => array('title' => t('Remove this field.'))),
       ),
     ); 
@@ -393,6 +392,33 @@ function flexiform_manage_form_fields_form_submit($form, &$form_state) {
  */
 function flexiform_manage_form_fields_fields($form, $form_state) {
   return $form['fields']['_add_field']['field'];
+}
+
+/**
+ * Configure flexiform field instance settings
+ */
+function flexiform_field_configure_form($form, &$form_state, $flexiform, $formfield) {
+  $form['temp']['#markup'] = 'Temporary';
+  
+  return $form;
+}
+
+/**
+ * Remove a flexiform field
+ */
+function flexiform_field_remove_form($form, &$form_state, $flexiform, $formfield) {
+  $form['temp']['#markup'] = 'Temporary';
+  
+  return $form;
+}
+
+/**
+ * Choose a widget type
+ */
+function flexiform_field_widget_type_form($form, &$form_state, $flexiform, $formfield) {
+  $form['temp']['#markup'] = 'Temporary';
+  
+  return $form;
 }
 
 /**

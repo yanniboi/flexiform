@@ -44,6 +44,41 @@ function flexiform_menu() {
         'access arguments' => array('administer flexiforms'),
       );
       
+      $items["$path/form-fields/%flexiform_formfield"] = array(
+        'title' => 'Edit Field',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('flexiform_field_configure_form', 4, 7),
+        'file' => 'flexiform.admin.inc',
+        'access arguments' => array('administer flexiforms'),
+      );
+      
+      $items["$path/form-fields/%flexiform_formfield/edit"] = array(
+        'title' => 'Configure',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('flexiform_field_configure_form', 4, 7),
+        'file' => 'flexiform.admin.inc',
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'access arguments' => array('administer flexiforms'),
+      );
+      
+      $items["$path/form-fields/%flexiform_formfield/widget-type"] = array(
+        'title' => 'Widget type',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('flexiform_field_widget_type_form', 4, 7),
+        'file' => 'flexiform.admin.inc',
+        'type' => MENU_LOCAL_TASK,
+        'access arguments' => array('administer flexiforms'),
+      );
+      
+      $items["$path/form-fields/%flexiform_formfield/remove"] = array(
+        'title' => 'Remove',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('flexiform_field_remove_form', 4, 7),
+        'file' => 'flexiform.admin.inc',
+        'type' => MENU_LOCAL_TASK,
+        'access arguments' => array('administer flexiforms'),
+      );
+      
       $items["$path/form-entities"] = array(
         'title' => 'Manage form entities',
         'page callback' => 'drupal_get_form',
@@ -389,7 +424,21 @@ function flexiform_submission_page_view($flexiform_submission, $view_mode = 'ful
   return $content;
 }
 
-
+/**
+ * Split a namespace into entity and field name
+ */
+function flexiform_formfield_load($string) {
+  $bits = explode('__', $string);
+  if (count($bits) != 2) {
+    drupal_set_message('Invalid Namspace Provided: ' . $string, 'Error');
+    return FALSE;
+  }
+  
+  $formfield['entity_namespace'] = $bits[0];
+  $formfield['field_name'] = $bits[1];
+  
+  return $formfield;
+}
 /**
  * Implements hook_views_api().
  */

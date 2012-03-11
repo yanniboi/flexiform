@@ -197,8 +197,7 @@ function flexiform_submission_edit_form($form, &$form_state, $flexiform_submissi
   
   // Add the field related form elements.
   $form_state['flexiform_submission'] = $flexiform_submission;
-  field_attach_form('flexiform_submission', $flexiform_submission, $form, $form_state);
-  
+    
   $form['actions'] = array(
     '#type' => 'container',
     '#attributes' => array('class' => array('form-actions')),
