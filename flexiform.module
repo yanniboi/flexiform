@@ -6,6 +6,59 @@
  */  
 
 /**
+ * Implements hook_menu()
+ *
+ * We want to add a manage form fields tab and a manage form entities tab
+ * for each flexiform
+ */
+function flexiform_menu() {
+  $items = array();
+  $flexiform = entity_get_info('flexiform_submission');
+  foreach($flexiform['bundles'] as $bundle_name => $bundle_info) {
+    if (isset($bundle_info['admin'])) {
+      // Get the admin path of the flexiform
+      $path = $bundle_info['admin']['path'];
+      // Different bundles can appear on the same path (e.g. %node_type and
+      // %comment_node_type). To allow field_ui_menu_load() to extract the
+      // actual bundle object from the translated menu router path
+      // arguments, we need to identify the argument position of the bundle
+      // name string ('bundle argument') and pass that position to the menu
+      // loader. The position needs to be casted into a string; otherwise it
+      // would be replaced with the bundle name string.
+      if (isset($bundle_info['admin']['bundle argument'])) {
+        $bundle_arg = $bundle_info['admin']['bundle argument'];
+        $bundle_pos = (string) $bundle_arg;
+      }
+      else {
+        $bundle_arg = $bundle_name;
+        $bundle_pos = '0';
+      }
+            
+      $items["$path/form-fields"] = array(
+        'title' => 'Manage form fields',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('flexiform_manage_form_fields_form', 4),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 2,
+        'file' => 'flexiform.admin.inc',
+        'access arguments' => array('administer flexiforms'),
+      );
+      
+      $items["$path/form-entities"] = array(
+        'title' => 'Manage form entities',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('flexiform_manage_form_entities_form', 4),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 3,
+        'file' => 'flexiform.admin.inc',
+        'access arguments' => array('administer flexiforms'),
+      );
+    }
+  }
+  return $items;
+}
+
+/**
  * Implement hook_entity_info().
  *
  * We define two entities here - the actual entity that will hold our domain
@@ -360,6 +413,9 @@ function flexiform_theme() {
       'render element' => 'elements',
       'template' => 'flexiform_submission',
     ),
+    'flexiform_field_table' => array(
+      'render element' => 'elements',
+    ),
   );
 }  
 
@@ -377,4 +433,17 @@ function flexiform_menu_local_tasks_alter(&$data, $router_item, $root_path) {
       );
     }
   }
+}
+
+/**
+ * Implement hook_element_info().
+ */
+function flexiform_element_info() {
+  return array(
+    'flexiform_field_table' => array(
+      '#theme' => 'flexiform_field_table',
+      '#pre_render' => array('flexiform_field_table_pre_render'),
+      '#regions' => array('' => array()),
+    ),
+  );
 }
