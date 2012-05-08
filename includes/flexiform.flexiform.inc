@@ -17,19 +17,28 @@
  */
 function flexiform_prepare_entities($flexiform, $submission) {
   $current_entities = $submission->entities;
-  
+  print_r($submission);
   $entities = array();
   foreach($flexiform->entities as $namespace => $info) {
     // If the id is already set on the submission entities...
     if (isset($current_entities[$namespace])) {
       // ...load that entity and continue
-      $entities[$namespace] = entity_load($info['entity_type'], $current_entities[$namespace]);
+      //$entities[$namespace] = entity_load($info['entity_type'], $current_entities[$namespace]);
       continue;
     }
         
-    if (isset($info['getter_callback']) && function_exists($info['getter_callback'])) {
-      $callback = $info['getter_callback'];
-      $entities[$namespace] = $callback($flexiform, $submission, $namespace, $entities);
+    if (isset($info['getter'])) {
+      $getter = flexiform_entity_getter_info($info['getter']);
+      
+      if (isset($getter['file']) && file_exists(drupal_get_path('module', $getter['module']) . '/' . $getter['file'])) {
+        include_once drupal_get_path('module', $getter['module']) . '/' . $getter['file'];
+      }      
+      
+      $callback = $getter['callback'];
+      if (function_exists($callback)) {      
+        // Todo: Sort out params
+        $entities[$namespace] = $callback($flexiform, $submission, $entities, $flexiform->entities[$namespace]);
+      }
     }
   }
   

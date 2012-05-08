@@ -496,3 +496,105 @@ function flexiform_element_info() {
     ),
   );
 }
+
+//-----------------------------------------------------------------------------
+// Entity Getter and Setter API
+
+/**
+ * Get info about all entity getters
+ */
+function flexiform_entity_getter_info($getter = NULL) {
+  $getters = &drupal_static(__FUNCTION__);
+  
+  if (!isset($getters)) {
+    if ($cache = cache_get('flexiform:entity_getter_info', 'cache')) {
+      $getters = $cache->data;
+    }
+    else {
+      $getters = array();
+      foreach (module_implements('flexiform_entity_getter_info') as $module) {
+        // Due to http://drupal.org/node/890660 we can't use module_invoke_all()
+        // because we need to know the provenance of each set.
+        $getters_module = module_invoke($module, 'flexiform_entity_getter_info');
+        foreach ($getters_module as $getter_name => $getter) {
+          $getter += array(
+            'params' => array(),
+            'callback' => 'flexiform_entity_getter_' . $getter_name,
+            'file' => $module . 'flexiform.inc',
+            'module' => $module,
+          );
+          $getters[$getter_name] = $getter;
+        }
+      }
+
+      // Alter the data sets with hook_party_data_set_info_alter().
+      drupal_alter('flexiform_entity_getter_info', $getters);
+
+      cache_set('flexiform:entity_getter_info', $getters);
+    }
+  }
+  
+  if (isset($getter)) {
+    return $getters[$getter];
+  }
+  else {
+    return $getters;
+  }
+  
+  return $getters;
+}
+
+/**
+ * Define standard entity getters. Entity getters are used by flexiform to load
+ * entities into the flexiform entity stack. Once a flexiform submission has
+ * been saved, entities with explicit ID's are loaded based on which entities
+ * were submitted when the submission was originally created.
+ *
+ * Each getter has the following keys
+ * - label (required) : A human readable name for the getter
+ * - description : A Description of the getter
+ * - entity_types (required) : An array of entity types this getter can return
+ * - file : Which file is the getter in
+ * - params : An array of parameters for the getter keyed by variable name with the 
+ *   following keys
+ *   - type : What type of parameter to expect. If set to entity, this will display
+ *     a drop down of the entities already in the forms stack
+ *   - entity_type : What type of entity to expect
+ * - callback : the name of the function to call for the getter (defaults to
+ *   flexiform_entity_getter_$getterkey
+ */
+function flexiform_flexiform_entity_getter_info() {
+  $getters = array();
+  
+  // Flexiform Submission Getters
+  $getters['this_submission'] = array( 
+    'label' => 'This Flexiform Submission',
+    'description' => 'The Flexiform Submission instance',
+    'entity_types' => array('flexiform_submission'),
+    'file' => 'includes/flexiform.flexiform.inc',
+  );
+  
+  // User Getters
+  $getters['user_current_user'] = array(
+    'label' => 'Current User',
+    'description' => 'Load the current user into the Form',
+    'entity_types' => array('user'),
+    'file' => 'user.flexiform.inc',    
+  );
+  
+  // Profile2 Getters 
+  $getters['profile2_profile_from_user'] = array(
+    'label' => 'Profile2 from User',
+    'description' => 'Load a Profile 2 Basede on a User',
+    'params' => array(
+      'user' => array(
+        'type' => 'entity',
+        'entity_type' => 'user',
+      ),
+    ),
+    'entity_types' => array('profile2'),
+    'file' => 'profile2.flexiform.inc',
+  );
+  
+  return $getters;
+}

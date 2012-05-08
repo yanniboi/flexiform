@@ -68,27 +68,29 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
 function flexiform_form_submit(&$form, &$form_state) {
   $flexiform = entity_ui_form_submit_build_entity($form, $form_state);
   
-  $flexiform->entities = array(
-    'this_submission' => array(
-      'entity_type' => 'flexiform_submission',
-      'bundle' => $flexiform->form,
-      'create' => TRUE,
-      'getter_callback' => 'flexiform_entity_getter_this_submission',
-    ),
-  );
-  
-  // Temp till a UI gets build
-  $flexiform->fields = array(
-    'this_submission' => array(
-      'field_test_field' => array(
-        'instance' => array(
-          'label' => 'Proof',
-          'widget' => array(
-            'weight' => 400,
-          ),
-        ),
+  if (empty($flexiform->entities)) {
+    $flexiform->entities = array(
+      'this_submission' => array(
+        'entity_type' => 'flexiform_submission',
+        'bundle' => $flexiform->form,
+        'create' => TRUE,
+        'getter' => 'this_submission',
       ),
-    ),
+    );
+  }
+  
+  // Temp till UI is build
+  $flexiform->entities['this_submission'] = array(
+    'entity_type' => 'flexiform_submission',
+    'bundle' => $flexiform->form,
+    'create' => TRUE,
+    'getter' => 'this_submission',
+  );
+  $flexiform->entities['temp_user'] = array(
+    'entity_type' => 'user',
+    'bundle' => 'user',
+    'create' => FALSE,
+    'getter' => 'user_current_user',
   );
   
   $flexiform->save();

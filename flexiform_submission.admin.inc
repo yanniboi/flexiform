@@ -227,7 +227,7 @@ function flexiform_submission_edit_form($form, &$form_state, $flexiform_submissi
       '#weight' => 45,
     );
   }
-
+  dsm($form_state);
   // We append the validate handler to #validate in case a form callback_wrapper
   // is used to add validate handlers earlier.
   $form['#validate'][] = 'flexiform_submission_edit_form_validate';
@@ -255,7 +255,7 @@ function flexiform_submission_edit_form_submit(&$form, &$form_state) {
   $flexiform = $form_state['flexiform'];  
   foreach ($form_state['entities'] as $namespace => $entity) {
     $info = $flexiform->entities[$namespace];
-    $namespace_fields = flexiform_get_entity_namespace_fields($entity_namespace, $form);
+    $namespace_fields = flexiform_get_entity_namespace_fields($namespace, $form);
     field_attach_submit($info['entity_type'], $entity, $namespace_fields, $form_state);
     entity_save($info['entity_type'], $entity);
   }
