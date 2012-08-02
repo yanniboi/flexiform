@@ -19,7 +19,7 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
    * parent class hook_menu() is optimized for entity type administration.
    */
   public function hook_menu() {
-    
+
     $items = array();
     $id_count = count(explode('/', $this->path));
     $wildcard = isset($this->entityInfo['admin ui']['menu wildcard']) ? $this->entityInfo['admin ui']['menu wildcard'] : '%' . $this->entityType;
@@ -32,10 +32,10 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
       'file path' => drupal_get_path('module', 'system'),
       'file' => 'system.admin.inc',
     );
-    
+
     // Change the overview menu type for the list of flexiform_submissions.
     $items[$this->path]['type'] = MENU_LOCAL_TASK;
-    
+
     // Change the add page menu to multiple types of entities
     $items['flexiform'] = array(
       'title' => 'Submit a Flexiform',
@@ -49,7 +49,7 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
       'file path' => drupal_get_path('module', $this->entityInfo['module'])
 
     );
-    
+
     // Add menu items to add each different type of entity.
     foreach (flexiform_get_flexiforms() as $form) {
       $items['flexiform/' . $form->form] = array(
@@ -59,9 +59,9 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
         'access callback' => 'flexiform_submission_access',
         'access arguments' => array('submit', $form->form),
         'file' => 'flexiform_submission.admin.inc',
-        'file path' => drupal_get_path('module', $this->entityInfo['module'])
+        'file path' => drupal_get_path('module', $this->entityInfo['module']),
       );
-      
+
       // Loading and editing flexiform_submission entities
       $items['flexiform/' . $form->form . '/' . $wildcard] = array(
         'title callback' => 'flexiform_submission_page_title',
@@ -74,14 +74,14 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
         'file' => 'flexiform_submission.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module'])
       );
-      
+
       // Menu item for viewing flexiform_submissions
       $items['flexiform/' . $form->form . '/' . $wildcard . '/view'] = array(
         'title' => 'View',
-        'weight' => -10,        
+        'weight' => -10,
         'type' => MENU_DEFAULT_LOCAL_TASK,
       );
-      
+
       $items['flexiform/' . $form->form . '/' . $wildcard . '/edit'] = array(
         'title' => 'Edit',
         'page callback' => 'flexiform_submission_form_wrapper',
@@ -91,8 +91,10 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
         'type' => MENU_LOCAL_TASK,
         'weight' => 0,
         'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+        'file' => 'flexiform_submission.admin.inc',
+        'file path' => drupal_get_path('module', $this->entityInfo['module']),
       );
-      
+
       $items['flexiform/' . $form->form . '/' . $wildcard . '/delete'] = array(
         'title' => 'Delete',
         'page callback' => 'flexiform_submission_delete_form_wrapper',
@@ -109,27 +111,27 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
 
     return $items;
   }
-  
-  
+
+
   /**
    * Create the markup for the add FlexiformSubmission Entities page within the class
    * so it can easily be extended/overriden.
-   */ 
+   */
   public function addPage() {
     $item = menu_get_item();
     $content = array();
     foreach(flexiform_get_flexiforms() as $form) {
       $content[] = menu_get_item('flexiform/'.$form->form);
     }
-    
+
     if (count($content) == 1) {
       $item = array_shift($content);
       drupal_goto($item['href']);
-    }    
-        
+    }
+
     return theme('flexiform_submission_add_list', array('content' => $content));
   }
-  
+
 }
 
 
@@ -144,7 +146,7 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
 function flexiform_submission_form_wrapper($flexiform_submission) {
   // Add the breadcrumb for the form's location.
   flexiform_submission_set_breadcrumb();
-  return drupal_get_form('flexiform_submission_edit_form', $flexiform_submission);
+  return drupal_get_form('flexiform_submission_edit_form_simple', $flexiform_submission);
 }
 
 
@@ -170,7 +172,7 @@ function flexiform_submission_delete_form_wrapper($flexiform_submission) {
  *   The flexiform_submission object to edit or for a create form an empty flexiform_submission object
  *     with only a flexiform_submission form defined.
  */
-function flexiform_submission_edit_form($form, &$form_state, $flexiform_submission) {  
+function flexiform_submission_edit_form($form, &$form_state, $flexiform_submission) {
   global $user;
   module_load_include('inc', 'flexiform', 'includes/flexiform.flexiform');
 
@@ -178,26 +180,26 @@ function flexiform_submission_edit_form($form, &$form_state, $flexiform_submissi
   $flexiform = flexiform_load($flexiform_submission->form);
   $form_state['flexiform'] = $flexiform;
   $form_state['entities'] = flexiform_prepare_entities($flexiform, $flexiform_submission);
-  
+
   foreach($form_state['entities'] as $namespace => $entity) {
     $fields = isset($flexiform->fields[$namespace]) ? $flexiform->fields[$namespace] : FALSE;
     if (!$fields) {
       continue;
     }
-    
+
     $info = $flexiform->entities[$namespace];
-    flexiform_embed_entity_fields($namespace, $info['entity_type'], $entity, $fields, $form, $form_state); 
+    flexiform_embed_entity_fields($namespace, $info['entity_type'], $entity, $fields, $form, $form_state);
   }
-  
-  // User field  
+
+  // User field
   $form['user'] = array(
     '#type' => 'value',
     '#value' => isset($flexiform_submission->user) ? $flexiform_submission->user : $user->uid,
   );
-  
+
   // Add the field related form elements.
   $form_state['flexiform_submission'] = $flexiform_submission;
-    
+
   $form['actions'] = array(
     '#type' => 'container',
     '#attributes' => array('class' => array('form-actions')),
@@ -217,7 +219,7 @@ function flexiform_submission_edit_form($form, &$form_state, $flexiform_submissi
     '#value' => t('Save Flexiform'),
     '#submit' => $submit + array('flexiform_submission_edit_form_submit'),
   );
-  
+
   if (!empty($flexiform_submission->name)) {
     $form['actions']['delete'] = array(
       '#type' => 'submit',
@@ -227,7 +229,7 @@ function flexiform_submission_edit_form($form, &$form_state, $flexiform_submissi
       '#weight' => 45,
     );
   }
-  dsm($form_state);
+
   // We append the validate handler to #validate in case a form callback_wrapper
   // is used to add validate handlers earlier.
   $form['#validate'][] = 'flexiform_submission_edit_form_validate';
@@ -240,7 +242,7 @@ function flexiform_submission_edit_form($form, &$form_state, $flexiform_submissi
  */
 function flexiform_submission_edit_form_validate(&$form, &$form_state) {
   $flexiform_submission = $form_state['flexiform_submission'];
-  
+
   // Notify field widgets to validate their data.
   field_attach_form_validate('flexiform_submission', $flexiform_submission, $form, $form_state);
 }
@@ -248,41 +250,118 @@ function flexiform_submission_edit_form_validate(&$form, &$form_state) {
 
 /**
  * Form API submit callback for the flexiform_submission form.
- * 
+ *
  * @todo remove hard-coded link
  */
 function flexiform_submission_edit_form_submit(&$form, &$form_state) {
-  $flexiform = $form_state['flexiform'];  
+  $flexiform = $form_state['flexiform'];
   foreach ($form_state['entities'] as $namespace => $entity) {
     $info = $flexiform->entities[$namespace];
     $namespace_fields = flexiform_get_entity_namespace_fields($namespace, $form);
     field_attach_submit($info['entity_type'], $entity, $namespace_fields, $form_state);
     entity_save($info['entity_type'], $entity);
   }
-  
+
   $flexiform_submission = entity_ui_controller('flexiform_submission')->entityFormSubmitBuildEntity($form, $form_state);
   // Save the flexiform_submission and go back to the list of flexiform_submissions
-  
+
   // Add in created and changed times.
   if ($flexiform_submission->is_new = isset($flexiform_submission->is_new) ? $flexiform_submission->is_new : 0){
     $flexiform_submission->created = time();
   }
 
   $flexiform_submission->changed = time();
-  
+
   $flexiform_submission->save();
   $form_state['redirect'] = 'flexiform/' . $flexiform_submission->form . '/' . $flexiform_submission->flexiform_submission_id;
 }
 
 /**
  * Form API submit callback for the delete button.
- * 
+ *
  * @todo Remove hard-coded path
  */
 function flexiform_submission_form_submit_delete(&$form, &$form_state) {
   $form_state['redirect'] = 'admin/content/flexiform_submissions/flexiform_submission/' . $form_state['flexiform_submission']->flexiform_submission_id . '/delete';
 }
 
+/**
+ * Form API callback for the flexiform simple form (just the flexiform entity).
+ */
+function flexiform_submission_edit_form_simple($form, &$form_state, $flexiform_submission) {
+  // Add the field related form elements.
+  $form_state['flexiform_submission'] = $flexiform_submission;
+
+  // Attach the flexiform fields to the form.
+  field_attach_form('flexiform_submission', $flexiform_submission, $form, $form_state);
+
+  // Prepare the actions container.
+  $form['actions'] = array(
+    '#type' => 'container',
+    '#attributes' => array('class' => array('form-actions')),
+    '#weight' => 400,
+  );
+
+  // We add the form's #submit array to this button along with the actual submit
+  // handler to preserve any submit handlers added by a form callback_wrapper.
+  $submit = array();
+
+  if (!empty($form['#submit'])) {
+    $submit += $form['#submit'];
+  }
+
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save Flexiform'),
+    '#submit' => $submit + array('flexiform_submission_edit_form_simple_submit'),
+  );
+
+  if (!empty($flexiform_submission->name)) {
+    $form['actions']['delete'] = array(
+      '#type' => 'submit',
+      '#value' => t('Delete flexiform_submission'),
+      '#suffix' => l(t('Cancel'), 'admin/content/flexiform_submissions'),
+      '#submit' => $submit + array('flexiform_submission_form_submit_delete'),
+      '#weight' => 45,
+    );
+  }
+
+  // We append the validate handler to #validate in case a form callback_wrapper
+  // is used to add validate handlers earlier.
+  $form['#validate'][] = 'flexiform_submission_edit_form_simple_validate';
+  return $form;
+}
+
+/**
+ * Form API validate callback for the simple flexiform_submission form
+ */
+function flexiform_submission_edit_form_simple_validate(&$form, &$form_state) {
+  $flexiform_submission = $form_state['flexiform_submission'];
+
+  // Notify field widgets to validate their data.
+  field_attach_form_validate('flexiform_submission', $flexiform_submission, $form, $form_state);
+}
+
+/**
+ * Form API submit callback for the simple flexiform_submission form.
+ *
+ * @todo remove hard-coded link
+ */
+function flexiform_submission_edit_form_simple_submit(&$form, &$form_state) {
+  $flexiform_submission = $form_state['flexiform_submission'];
+
+  field_attach_submit('flexiform_submission', $flexiform_submission, $form, &$form_state);
+
+  // Add in created and changed times.
+  if ($flexiform_submission->is_new = isset($flexiform_submission->is_new) ? $flexiform_submission->is_new : 0){
+    $flexiform_submission->created = time();
+  }
+
+  $flexiform_submission->changed = time();
+
+  $flexiform_submission->save();
+  $form_state['redirect'] = 'flexiform/' . $flexiform_submission->form . '/' . $flexiform_submission->flexiform_submission_id;
+}
 
 /**
  * Form callback: confirmation form for deleting a flexiform_submission.
@@ -305,7 +384,7 @@ function flexiform_submission_delete_form($form, &$form_state, $flexiform_submis
     t('Cancel'),
     'confirm'
   );
-  
+
   return $form;
 }
 
