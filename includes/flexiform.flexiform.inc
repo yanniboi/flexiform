@@ -19,6 +19,7 @@ function flexiform_prepare_entities($flexiform, $submission) {
   $current_entities = $submission->entities;
   print_r($submission);
   $entities = array();
+  dpm($flexiform);
   foreach($flexiform->entities as $namespace => $info) {
     // If the id is already set on the submission entities...
     if (isset($current_entities[$namespace])) {

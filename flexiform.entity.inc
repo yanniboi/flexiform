@@ -45,6 +45,7 @@ class FlexiformController extends EntityAPIControllerExportable {
       'is_new' => TRUE,
     );
     $flexiform = parent::create($values);
+    
     return $flexiform;
   }
 

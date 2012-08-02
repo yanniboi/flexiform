@@ -88,6 +88,18 @@ function flexiform_menu() {
         'file' => 'flexiform.admin.inc',
         'access arguments' => array('administer flexiforms'),
       );
+      
+      
+      
+      $items["$path/form-entities/%/remove"] = array(
+        'title' => 'Remove',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('flexiform_entity_remove_form', 4, 7),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 3,
+        'file' => 'flexiform.admin.inc',
+        'access arguments' => array('administer flexiforms'),
+      );
     }
   }
   return $items;
@@ -465,6 +477,9 @@ function flexiform_theme() {
     'flexiform_field_table' => array(
       'render element' => 'elements',
     ),
+    'flexiform_entity_table' => array(
+      'render element' => 'elements',
+    ),
   );
 }  
 
@@ -492,6 +507,11 @@ function flexiform_element_info() {
     'flexiform_field_table' => array(
       '#theme' => 'flexiform_field_table',
       '#pre_render' => array('flexiform_field_table_pre_render'),
+      '#regions' => array('' => array()),
+    ),
+    'flexiform_entity_table' => array(
+      '#theme' => 'flexiform_entity_table',
+      '#pre_render' => array('flexiform_entity_table_pre_render'),
       '#regions' => array('' => array()),
     ),
   );
@@ -534,7 +554,7 @@ function flexiform_entity_getter_info($getter = NULL) {
     }
   }
   
-  if (isset($getter)) {
+  if (!empty($getter)) {
     return $getters[$getter];
   }
   else {
@@ -542,6 +562,25 @@ function flexiform_entity_getter_info($getter = NULL) {
   }
   
   return $getters;
+}
+
+/**
+ * Get the getters for a particular entity type
+ */
+function flexiform_entity_type_get_getters($entity_type) {
+  // If this isn't an entity type return false
+  if (!entity_get_info($entity_type)) {
+    return FALSE;
+  }
+
+  $getters = flexiform_entity_getter_info();
+  $applicable_getters = array();
+  foreach ($getters as $getter => $info) {
+    if (in_array($entity_type, $info['entity_types'])) {
+      $applicable_getters[$getter] = $info;
+    }
+  }
+  return $applicable_getters;
 }
 
 /**
