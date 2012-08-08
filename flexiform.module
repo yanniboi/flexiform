@@ -3,7 +3,7 @@
  * @file
  * Module for the FlexiformSubmission Entity - a starting point to create your own Entity
  * and associated administration interface
- */  
+ */
 
 /**
  * Implements hook_menu()
@@ -33,7 +33,7 @@ function flexiform_menu() {
         $bundle_arg = $bundle_name;
         $bundle_pos = '0';
       }
-            
+
       $items["$path/form-fields"] = array(
         'title' => 'Manage form fields',
         'page callback' => 'drupal_get_form',
@@ -43,7 +43,7 @@ function flexiform_menu() {
         'file' => 'flexiform.admin.inc',
         'access arguments' => array('administer flexiforms'),
       );
-      
+
       $items["$path/form-fields/%flexiform_formfield"] = array(
         'title' => 'Edit Field',
         'page callback' => 'drupal_get_form',
@@ -51,7 +51,7 @@ function flexiform_menu() {
         'file' => 'flexiform.admin.inc',
         'access arguments' => array('administer flexiforms'),
       );
-      
+
       $items["$path/form-fields/%flexiform_formfield/edit"] = array(
         'title' => 'Configure',
         'page callback' => 'drupal_get_form',
@@ -60,7 +60,7 @@ function flexiform_menu() {
         'type' => MENU_DEFAULT_LOCAL_TASK,
         'access arguments' => array('administer flexiforms'),
       );
-      
+
       $items["$path/form-fields/%flexiform_formfield/widget-type"] = array(
         'title' => 'Widget type',
         'page callback' => 'drupal_get_form',
@@ -69,7 +69,7 @@ function flexiform_menu() {
         'type' => MENU_LOCAL_TASK,
         'access arguments' => array('administer flexiforms'),
       );
-      
+
       $items["$path/form-fields/%flexiform_formfield/remove"] = array(
         'title' => 'Remove',
         'page callback' => 'drupal_get_form',
@@ -78,7 +78,7 @@ function flexiform_menu() {
         'type' => MENU_LOCAL_TASK,
         'access arguments' => array('administer flexiforms'),
       );
-      
+
       $items["$path/form-entities"] = array(
         'title' => 'Manage form entities',
         'page callback' => 'drupal_get_form',
@@ -88,9 +88,9 @@ function flexiform_menu() {
         'file' => 'flexiform.admin.inc',
         'access arguments' => array('administer flexiforms'),
       );
-      
-      
-      
+
+
+
       $items["$path/form-entities/%/remove"] = array(
         'title' => 'Remove',
         'page callback' => 'drupal_get_form',
@@ -145,7 +145,7 @@ function flexiform_entity_info() {
       'menu wildcard' => '%flexiform_submission',
     ),
   );
-  // The entity that holds information about the entity types	  
+  // The entity that holds information about the entity types
   $return['flexiform'] = array(
     'label' => t('Flexible Form'),
     'entity class' => 'Flexiform',
@@ -208,10 +208,10 @@ function flexiform_permission() {
     'administer flexiform_submissions' => array(
       'title' => t('Administer flexiform_submissions'),
       'description' => t('Edit and delete all flexiform_submissions'),
-    ),  
+    ),
   );
-  
-  //Generate permissions per flexiform_submission 
+
+  //Generate permissions per flexiform_submission
   foreach (flexiform_get_flexiforms() as $form) {
     $form_name = check_plain($form->form);
     $permissions += array(
@@ -238,7 +238,7 @@ function flexiform_permission() {
       ),
     );
   }
-  return $permissions;  
+  return $permissions;
 }
 
 /**
@@ -257,32 +257,32 @@ function flexiform_permission() {
  */
 function flexiform_submission_access($op, $flexiform_submission = NULL, $account = NULL) {
   global $user;
-  
+
   // If the account is NULL use the user
   if ($account === NULL) {
     $account = $user;
   }
-  
+
   // Check if the user can just administer anything
   if (user_access('administer flexiform_submissions', $account)) {
     return TRUE;
   }
-  
+
   // Special case for when adding new submissions
   if ($op == 'submit') {
     $form_name = $flexiform_submission;
-    return user_access("submit a $form_name flexiform", $account); 
+    return user_access("submit a $form_name flexiform", $account);
   }
   if (isset($flexiform_submission) && $form_name = $flexiform_submission->form) {
     // If we don't recognise the op, return false
     if (!in_array($op, array('view','edit','delete'))) {
       return FALSE;
     }
-    
+
     if (user_access("$op any $form_name flexiform submission", $account)) {
       return TRUE;
     }
-    
+
     if ($flexiform_submission->user == $account->uid && user_access("$op own $form_name flexiform submissions", $account)) {
       return TRUE;
     }
@@ -325,7 +325,7 @@ function flexiform_load($form) {
 }
 
 /**
- * Fetch a flexiform_submission object. Make sure that the wildcard you choose 
+ * Fetch a flexiform_submission object. Make sure that the wildcard you choose
  * in the flexiform_submission entity definition fits the function name here.
  *
  * @param $flexiform_submission_id
@@ -429,8 +429,8 @@ function flexiform_submission_page_title(FlexiformSubmission $flexiform_submissi
  * Sets up content to show an individual flexiform_submission
  * @todo - get rid of drupal_set_title();
  */
-function flexiform_submission_page_view($flexiform_submission, $view_mode = 'full') {    
-  $controller = entity_get_controller('flexiform_submission');  
+function flexiform_submission_page_view($flexiform_submission, $view_mode = 'full') {
+  $controller = entity_get_controller('flexiform_submission');
   $content = $controller->view(array($flexiform_submission->flexiform_submission_id => $flexiform_submission));
   //drupal_set_title($flexiform_submission->name);
   return $content;
@@ -445,12 +445,13 @@ function flexiform_formfield_load($string) {
     drupal_set_message('Invalid Namspace Provided: ' . $string, 'Error');
     return FALSE;
   }
-  
+
   $formfield['entity_namespace'] = $bits[0];
   $formfield['field_name'] = $bits[1];
-  
+
   return $formfield;
 }
+
 /**
  * Implements hook_views_api().
  */
@@ -481,7 +482,7 @@ function flexiform_theme() {
       'render element' => 'elements',
     ),
   );
-}  
+}
 
 /**
  * Implements hook_menu_local_tasks_alter().
@@ -500,7 +501,7 @@ function flexiform_menu_local_tasks_alter(&$data, $router_item, $root_path) {
 }
 
 /**
- * Implement hook_element_info().
+ * Implements hook_element_info().
  */
 function flexiform_element_info() {
   return array(
@@ -517,6 +518,39 @@ function flexiform_element_info() {
   );
 }
 
+/**
+ * Implements hook_field_create_instance().
+ *
+ * When a field is added to a flexiform_submission bundle add it to that forms form_fields.
+ */
+function flexiform_field_create_instance($instance) {
+  // Only act on fields added to the flexiform_submission entity.
+  if ($instance['entity_type'] != 'flexiform_submission') {
+    return;
+  }
+
+  // Load the flexiform entity
+  $flexiform = flexiform_load($instance['bundle']);
+
+  // Construct the form field settings array.
+  $form_field = array(
+    'field_name' => $instance['field_name'],
+    'entity_namespace' => 'this_submission',
+    'instance' => array(
+      'label' => $instance['label'],
+      'widget' => array(
+        'weight' => $intance['widget']['weight'],
+      ),
+    ),
+  );
+
+  // Add the field to the flexiform->fields array.
+  $flexiform->fields['this_submission'][$instance['field_name']] = $form_field;
+
+  // Save the flexiform.
+  $flexiform->save();
+}
+
 //-----------------------------------------------------------------------------
 // Entity Getter and Setter API
 
@@ -525,7 +559,7 @@ function flexiform_element_info() {
  */
 function flexiform_entity_getter_info($getter = NULL) {
   $getters = &drupal_static(__FUNCTION__);
-  
+
   if (!isset($getters)) {
     if ($cache = cache_get('flexiform:entity_getter_info', 'cache')) {
       $getters = $cache->data;
@@ -553,14 +587,14 @@ function flexiform_entity_getter_info($getter = NULL) {
       cache_set('flexiform:entity_getter_info', $getters);
     }
   }
-  
+
   if (!empty($getter)) {
     return $getters[$getter];
   }
   else {
     return $getters;
   }
-  
+
   return $getters;
 }
 
@@ -594,7 +628,7 @@ function flexiform_entity_type_get_getters($entity_type) {
  * - description : A Description of the getter
  * - entity_types (required) : An array of entity types this getter can return
  * - file : Which file is the getter in
- * - params : An array of parameters for the getter keyed by variable name with the 
+ * - params : An array of parameters for the getter keyed by variable name with the
  *   following keys
  *   - type : What type of parameter to expect. If set to entity, this will display
  *     a drop down of the entities already in the forms stack
@@ -604,24 +638,24 @@ function flexiform_entity_type_get_getters($entity_type) {
  */
 function flexiform_flexiform_entity_getter_info() {
   $getters = array();
-  
+
   // Flexiform Submission Getters
-  $getters['this_submission'] = array( 
+  $getters['this_submission'] = array(
     'label' => 'This Flexiform Submission',
     'description' => 'The Flexiform Submission instance',
     'entity_types' => array('flexiform_submission'),
     'file' => 'includes/flexiform.flexiform.inc',
   );
-  
+
   // User Getters
   $getters['user_current_user'] = array(
     'label' => 'Current User',
     'description' => 'Load the current user into the Form',
     'entity_types' => array('user'),
-    'file' => 'user.flexiform.inc',    
+    'file' => 'user.flexiform.inc',
   );
-  
-  // Profile2 Getters 
+
+  // Profile2 Getters
   $getters['profile2_profile_from_user'] = array(
     'label' => 'Profile2 from User',
     'description' => 'Load a Profile 2 Basede on a User',
@@ -634,6 +668,6 @@ function flexiform_flexiform_entity_getter_info() {
     'entity_types' => array('profile2'),
     'file' => 'profile2.flexiform.inc',
   );
-  
+
   return $getters;
 }
