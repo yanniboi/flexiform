@@ -89,6 +89,12 @@ function flexiform_schema() {
         'not null' => TRUE,
         'default' => '',
       ),
+      'advanced' => array(
+        'description' => 'Select the type of form that is submitted. 0 for simple, 1 for complex/advanced',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'weight' => array(
         'type' => 'int',
         'not null' => TRUE,
@@ -118,4 +124,15 @@ function flexiform_schema() {
   );
 
   return $schema;
+}
+
+function flexiform_update_7001() {
+  $spec = array(
+    'description' => 'Select the type of form that is submitted. 0 for simple, 1 for complex/advanced',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+  );
+
+  db_add_field('flexiform', 'advanced', $spec);
 }

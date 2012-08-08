@@ -39,6 +39,14 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
     '#required' => TRUE,
     '#size' => 30,
   );
+
+  $form['advanced'] = array(
+	   '#title' => t('Advanced form'),
+	   '#type' => 'checkbox',
+	   '#default_value' => isset($flexiform->advanced) ? $flexiform->advanced : FALSE,
+	   '#description' => t('Check this box to use the advanced form. WARNING: Advanced users only.'),
+  );
+
   // Machine-readable type name.
   $form['form'] = array(
     '#type' => 'machine_name',

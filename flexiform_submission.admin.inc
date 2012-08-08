@@ -146,7 +146,15 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
 function flexiform_submission_form_wrapper($flexiform_submission) {
   // Add the breadcrumb for the form's location.
   flexiform_submission_set_breadcrumb();
-  return drupal_get_form('flexiform_submission_edit_form_simple', $flexiform_submission);
+
+  $flexiform = flexiform_load($flexiform_submission->form);
+
+  if ($flexiform->advanced) {
+    return drupal_get_form('flexiform_submission_edit_form', $flexiform_submission);
+  }
+  else {
+    return drupal_get_form('flexiform_submission_edit_form_simple', $flexiform_submission);
+  }
 }
 
 
