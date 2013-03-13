@@ -89,6 +89,13 @@ function flexiform_schema() {
         'not null' => TRUE,
         'default' => '',
       ),
+      'form_group' => array(
+        'description' => 'The group that this flexiform belongs to.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 'general',
+      ),
       'advanced' => array(
         'description' => 'Select the type of form that is submitted. 0 for simple, 1 for complex/advanced',
         'type' => 'int',
@@ -135,4 +142,23 @@ function flexiform_update_7001() {
   );
 
   db_add_field('flexiform', 'advanced', $spec);
+}
+
+/**
+ * Add the group field to flexiforms.
+ */
+function flexiform_update_7002() {
+  $spec = array(
+    'description' => 'The group that this flexiform belongs to.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => 'general',
+  );
+  $keys = array(
+    'indexes' => array(
+      'form_group' => array('form_group'),
+    ),
+  );
+  db_add_field('flexiform', 'form_group', $spec, $keys);
 }

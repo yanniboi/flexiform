@@ -6,6 +6,14 @@
  */
 
 /**
+ * Implements hook_hook_info().
+ */
+function flexiform_hook_info() {
+  $hooks['flexiform_group_info'] = array('group' => 'flexiform');
+  return $hooks;
+}
+
+/**
  * Implements hook_menu()
  *
  * We want to add a manage form fields tab and a manage form entities tab
@@ -102,6 +110,15 @@ function flexiform_menu() {
       );
     }
   }
+
+  $items['flexiform_submission/%flexiform_submission'] = array(
+    'title' => 'View submission',
+    'page callback' => 'flexiform_submission_page_view',
+    'page arguments' => array(1),
+    'access callback' => 'flexiform_submission_access',
+    'access arguments' => array('view', 1),
+  );
+
   return $items;
 }
 
@@ -549,6 +566,19 @@ function flexiform_field_create_instance($instance) {
 
   // Save the flexiform.
   $flexiform->save();
+}
+
+/**
+ * Retreive a list of flexiform groups.
+ */
+function flexifrom_get_groups() {
+  $groups = &drupal_static(__FUNCTION__, NULL);
+
+  if ($groups === NULL) {
+    $groups = module_invoke_all('flexiform_group_info');
+  }
+
+  return $groups;
 }
 
 //-----------------------------------------------------------------------------

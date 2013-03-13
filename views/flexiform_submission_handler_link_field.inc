@@ -11,7 +11,7 @@ class flexiform_submission_handler_link_field extends views_handler_field {
     parent::construct();
 
     $this->additional_fields['flexiform_submission_id'] = 'flexiform_submission_id';
-    $this->additional_fields['type'] = 'type';
+    $this->additional_fields['form'] = 'form';
   }
 
   function option_definition() {
