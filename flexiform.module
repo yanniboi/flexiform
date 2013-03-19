@@ -212,6 +212,15 @@ function flexiform_entity_info_alter(&$entity_info) {
 }
 
 /**
+ * Impements hook_ctools_plugin_directory().
+ */
+function flexiform_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'panelizer' && $plugin_type == 'entity') {
+    return "plugins/$plugin_type";
+  }
+}
+
+/**
  * Implements hook_permission().
  */
 function flexiform_permission() {
