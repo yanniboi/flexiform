@@ -9,7 +9,7 @@
  *
  * Handles commerce_order specific functionality for Panelizer.
  */
-class PanelizerEntityCommerceOrder extends PanelizerEntityDefault {
+class PanelizerEntityFlexiformSubmission extends PanelizerEntityDefault {
   /**
    * True if the entity supports revisions.
    */
