@@ -10,6 +10,7 @@
  */
 function flexiform_hook_info() {
   $hooks['flexiform_group_info'] = array('group' => 'flexiform');
+  $hooks['flexiform_submission_access'] = array('group' => 'flexiform');
   return $hooks;
 }
 
@@ -282,38 +283,52 @@ function flexiform_permission() {
  *   Whether access is allowed or not.
  */
 function flexiform_submission_access($op, $flexiform_submission = NULL, $account = NULL) {
-  global $user;
-
-  // If the account is NULL use the user
-  if ($account === NULL) {
-    $account = $user;
-  }
-
-  // Check if the user can just administer anything
+  // Check if the user can administer everything. This always takes precident.
   if (user_access('administer flexiform_submissions', $account)) {
     return TRUE;
   }
 
-  // Special case for when adding new submissions
+  // If the account is NULL use the global user. We deal with this here so that
+  // implementations of hook_flexiform_submission_access() always get a user
+  // object.
+  if ($account === NULL) {
+    global $user;
+    $account = $user;
+  }
+
+  // See if other modules want to influence access.
+  $access = module_invoke_all('flexiform_submission_access', $op, $flexiform_submission, $account);
+
+  // Any FALSE responses will always result in a denial.
+  if (in_array(FALSE, $access, TRUE)) {
+    return FALSE;
+  }
+  // Otherwise any TRUE response will give access.
+  elseif (in_array(TRUE, $access, TRUE)) {
+    return TRUE;
+  }
+
+  // If no other modules have any response, we'll fall back to our normal
+  // access checks.
+
+  // Special case for when adding new submissions.
   if ($op == 'submit') {
     $form_name = $flexiform_submission;
     return user_access("submit a $form_name flexiform", $account);
   }
-  if (isset($flexiform_submission) && $form_name = $flexiform_submission->form) {
-    // If we don't recognise the op, return false
+  elseif (isset($flexiform_submission) && $form_name = $flexiform_submission->form) {
+    // If we don't recognise the op, return FALSE.
     if (!in_array($op, array('view','edit','delete'))) {
       return FALSE;
     }
-
-    if (user_access("$op any $form_name flexiform submission", $account)) {
+    // Check the user access for this op on this form.
+    elseif (user_access("$op any $form_name flexiform submission", $account)) {
       return TRUE;
     }
-
-    if ($flexiform_submission->user == $account->uid && user_access("$op own $form_name flexiform submissions", $account)) {
+    elseif ($flexiform_submission->user == $account->uid && user_access("$op own $form_name flexiform submissions", $account)) {
       return TRUE;
     }
   }
-  return FALSE;
 }
 
 /**
