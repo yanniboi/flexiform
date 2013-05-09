@@ -14,7 +14,7 @@ class PanelizerEntityFlexiformSubmission extends PanelizerEntityDefault {
    * True if the entity supports revisions.
    */
   public $supports_revisions = FALSE; // Can be sniffed
-  public $entity_admin_root = 'admin/structure/flexiforms/manage/%flexiform'; // Can be sniffed
+  public $entity_admin_root = 'admin/structure/flexiforms/manage/%'; // Can be sniffed
   public $entity_admin_bundle = 4; // Can be sniffed.
   public $views_table = 'flexiform_submission';
   public $uses_page_manage = FALSE;
