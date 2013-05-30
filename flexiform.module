@@ -358,6 +358,7 @@ function flexiform_get_flexiforms($flexiform_name = NULL) {
  *
  * @param $form
  *   The machine-readable name of a flexiform to load.
+ *
  * @return
  *   A flexiform array or FALSE if $type does not exist.
  */
