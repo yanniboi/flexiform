@@ -96,6 +96,20 @@ function flexiform_schema() {
         'not null' => TRUE,
         'default' => 'general',
       ),
+      'base_entity' => array(
+        'description' => 'The base entity type of the form.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'base_entity_bundle' => array(
+        'description' => 'The base entity type of the form.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
       'advanced' => array(
         'description' => 'Select the type of form that is submitted. 0 for simple, 1 for complex/advanced',
         'type' => 'int',
@@ -116,12 +130,12 @@ function flexiform_schema() {
         'serialize' => TRUE,
         'description' => 'A serialized array of entities involved in this flexiform.',
       ),
-      'fields' => array(
+      'elements' => array(
         'type' => 'text',
         'not null' => FALSE,
         'size' => 'big',
         'serialize' => TRUE,
-        'description' => 'A serialized array of fields related to this flexiform.',
+        'description' => 'A serialized array of elements related to this flexiform.',
       ),
     ) + entity_exportable_schema_fields(),
     'primary key' => array('id'),
@@ -161,4 +175,46 @@ function flexiform_update_7002() {
     ),
   );
   db_add_field('flexiform', 'form_group', $spec, $keys);
+}
+
+/**
+ * Add the base_entity and base_entity_bundle.
+ */
+function flexiform_update_7003() {
+  db_add_field('flexiform', 'base_entity', array(
+    'description' => 'The base entity type of the form.',
+    'type' => 'varchar',
+    'length' => 128,
+    'not null' => TRUE,
+    'default' => '',
+  ),
+  array(
+    'indexes' => array(
+      'base_entity' => array('base_entity'),
+    ),
+  ));
+
+  db_add_field('flexiform', 'base_entity_bundle', array(
+    'description' => 'The base entity type of the form.',
+    'type' => 'varchar',
+    'length' => 128,
+    'not null' => TRUE,
+    'default' => '',
+  ));
+
+  db_change_field('flexiform', 'fields', 'elements', array(
+    'type' => 'text',
+    'not null' => FALSE,
+    'size' => 'big',
+    'serialize' => TRUE,
+    'description' => 'A serialized array of elements related to this flexiform.',
+  ));
+  
+  // Update existing flexiform configurations.
+  db_update('flexiform')
+    ->fields(array(
+      'base_entity' => 'flexiform_submission',
+    ))
+    ->expression('base_entity_bundle', 'form')
+    ->execute();
 }
