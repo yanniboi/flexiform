@@ -152,7 +152,6 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
     '#required' => TRUE,
     '#prefix' => '<div id="flexiform-builder-selector">',
     '#suffix' => '</div>',
-    '#disabled' => empty($flexiform->is_new),
   );
 
   $form['form_group'] = array(
