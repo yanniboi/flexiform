@@ -494,6 +494,8 @@ class FlexiformElementFlexiform extends FlexiformElement {
 
     $form[$this->element_namespace] = flexiform($sub_form, $form_state, $this->getFlexiform(), $entity, FALSE);
     $form[$this->element_namespace]['#flexiform_element'] = $this;
+    $form[$this->element_namespace]['#type'] = 'fieldset';
+    $form[$this->element_namespace]['#title'] = $this->label;
 
     return $form;
   }
