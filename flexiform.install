@@ -137,6 +137,18 @@ function flexiform_schema() {
         'serialize' => TRUE,
         'description' => 'A serialized array of elements related to this flexiform.',
       ),
+      'path' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'The path to a new submission of this form.',
+      ),
+      'edit_path' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'The path to an edit version of this form.',
+      ),
     ) + entity_exportable_schema_fields(),
     'primary key' => array('id'),
     'unique keys' => array(
@@ -216,5 +228,29 @@ function flexiform_update_7003() {
       'base_entity' => 'flexiform_submission',
     ))
     ->expression('base_entity_bundle', 'form')
+    ->execute();
+}
+
+/**
+ * Add the path fields to the flexiform table.
+ */
+function flexiform_update_7004() {
+  db_add_field('flexiform', 'path', array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+    'description' => 'The path to a new submission of this form.',
+  ));
+
+  db_add_field('flexiform', 'edit_path', array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+    'description' => 'The path to an edit version of this form.',
+  ));
+
+  db_update('flexiform')
+    ->expression('path', "CONCAT('flexiform/', form)")
+    ->expression('edit_path', "CONCAT('flexiform/', form, '/%')")
     ->execute();
 }

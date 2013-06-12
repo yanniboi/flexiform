@@ -134,6 +134,20 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
     $form['form_group']['#value'] = $group;
   }
 
+  $form['path'] = array(
+    '#title' => t('Path to Form'),
+    '#type' => 'text',
+    '#default_value' => isset($flexiform->path) ? $flexiform->path : NULL,
+    '#description' => t('The path to a new submission of this form. If blank the form will not be exposed at a path.'),
+  );
+
+  $form['edit_path'] = array(
+    '#title' => t('Path to Edit Form'),
+    '#type' => 'text',
+    '#default_value' => isset($flexiform->edit_path) ? $flexiform->edit_path : NULL,
+    '#description' => t('The path to an edit version of this form. Must include a single \'%\' where the id of the base entity will go.'),
+  );
+
   $form['advanced'] = array(
     '#title' => t('Advanced form'),
     '#type' => 'checkbox',

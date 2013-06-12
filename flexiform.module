@@ -118,23 +118,47 @@ function flexiform_menu() {
     'access arguments' => array('view', 1),
   );
 
-  $items['flexiform/%flexiform'] = array(
-    'title callback' => 'flexiform_page_title',
-    'title arguments' => array(1),
-    'page callback' => 'flexiform_page_wrapper',
-    'page arguments' => array(1),
-    'access callback' => TRUE,
-    'file' => 'flexiform.pages.inc',
-  );
+  // Get Flexiform Pages
+  $query = db_select('flexiform', 'f');
+  $query->isNotNull('path');
+  $query->condition('path', '', '<>');
+  $query->fields('f', array('form', 'path'));
+  $forms = $query->execute()->fetchAllAssoc('form');
 
-  $items['flexiform/%flexiform/%'] = array(
-    'title callback' => 'flexiform_page_title',
-    'title arguments' => array(1, 2),
-    'page callback' => 'flexiform_page_wrapper',
-    'page arguments' => array(1, 2),
-    'access callback' => TRUE,
-    'file' => 'flexiform.pages.inc',
-  );
+  foreach ($forms as $form => $row) {
+    $items[$row->path] = array(
+      'title callback' => 'flexiform_page_title',
+      'title arguments' => array($form),
+      'page callback' => 'flexiform_page_wrapper',
+      'page arguments' => array($form),
+      'access callback' => TRUE,
+      'file' => 'flexiform.pages.inc',
+    );
+  }
+
+  // Get Flexiform Edit Pages
+  $query = db_select('flexiform', 'f');
+  $query->isNotNull('edit_path');
+  $query->condition('edit_path', '', '<>');
+  $query->fields('f', array('form', 'edit_path'));
+  $forms = $query->execute()->fetchAllAssoc('form');
+
+  foreach ($forms as $form => $row) {
+    $path_bits = explode('/', $row->edit_path);
+    $wildcard_key = array_search('%', $path_bits);
+    if ($wildcard_key === FALSE) {
+      continue;
+    }
+
+    $items[$row->edit_path] = array(
+      'title callback' => 'flexiform_page_title',
+      'title arguments' => array($form, $wildcard_key),
+      'page callback' => 'flexiform_page_wrapper',
+      'page arguments' => array($form, $wildcard_key),
+      'access callback' => TRUE,
+      'file' => 'flexiform.pages.inc',
+    );
+  }
 
   return $items;
 }
