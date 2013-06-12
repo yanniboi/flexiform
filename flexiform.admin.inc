@@ -49,6 +49,7 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
       'source' => array('label'),
     ),
     '#description' => t('A unique machine-readable name for this flexiform. It must only contain lowercase letters, numbers, and underscores.'),
+    '#disabled' => empty($flexiform->is_new),
   );
 
   $entity_info = entity_get_info();
@@ -70,6 +71,7 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
       'wrapper' => 'flexiform-base-entity-bundle-selector',
       'callback' => 'flexiform_form_base_entity_bundle_selector',
     ),
+    '#disabled' => empty($flexiform->is_new),
   );
 
   if (isset($form_state['values']['base_entity'])) {
@@ -105,6 +107,7 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
     '#required' => TRUE,
     '#prefix' => '<div id="flexiform-base-entity-bundle-selector">',
     '#suffix' => '</div>',
+    '#disabled' => empty($flexiform->is_new),
   );
 
 
@@ -189,8 +192,6 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
     $form['rules']['inactive']['#caption'] = t('Inactive Actions');
     $form['rules']['inactive']['#empty'] = t('There are no inactive rules.');
   }
-
-  dpm($form);
 
   return $form;
 }
