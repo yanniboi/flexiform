@@ -98,8 +98,6 @@ function flexiform_menu() {
         'access arguments' => array('administer flexiforms'),
       );
 
-
-
       $items["$path/form-entities/%/remove"] = array(
         'title' => 'Remove',
         'page callback' => 'drupal_get_form',
@@ -118,6 +116,24 @@ function flexiform_menu() {
     'page arguments' => array(1),
     'access callback' => 'flexiform_submission_access',
     'access arguments' => array('view', 1),
+  );
+
+  $items['flexiform/%flexiform'] = array(
+    'title callback' => 'flexiform_page_title',
+    'title arguments' => array(1),
+    'page callback' => 'flexiform_page_wrapper',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+    'file' => 'flexiform.pages.inc',
+  );
+
+  $items['flexiform/%flexiform/%'] = array(
+    'title callback' => 'flexiform_page_title',
+    'title arguments' => array(1, 2),
+    'page callback' => 'flexiform_page_wrapper',
+    'page arguments' => array(1, 2),
+    'access callback' => TRUE,
+    'file' => 'flexiform.pages.inc',
   );
 
   return $items;
@@ -163,6 +179,7 @@ function flexiform_entity_info() {
       'menu wildcard' => '%flexiform_submission',
     ),
   );
+
   // The entity that holds information about the entity types
   $return['flexiform'] = array(
     'label' => t('Flexible Form'),
@@ -354,6 +371,35 @@ function flexiform_get_flexiforms($flexiform_name = NULL) {
 }
 
 /**
+ * Gets an array of all flexiforms with a given base_entity type and bundle.
+ *
+ * @param string $entity_type
+ *   The entity type of base entity.
+ * @param string $bundle
+ *   The bundle of the base entity.
+ *
+ * @return array
+ *   An array of flexiforms.
+ */
+function flexiform_get_base_entity_forms($entity_type, $bundle = FALSE) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'flexiform');
+  $query->propertyCondition('base_entity', $entity_type);
+
+  if ($bundle) {
+    $query->propertyCondition('base_entity_bundle', $bundle);
+  }
+
+  $entities = $query->execute();
+
+  if (empty($entities['flexiform'])) {
+    return array();
+  }
+
+  return entity_load('flexiform', array_keys($entities['flexiform']));
+}
+
+/**
  * Menu argument loader; Load a flexiform by string.
  *
  * @param $form
@@ -482,16 +528,7 @@ function flexiform_submission_page_view($flexiform_submission, $view_mode = 'ful
  * Split a namespace into entity and field name
  */
 function flexiform_formfield_load($string) {
-  $bits = explode('__', $string);
-  if (count($bits) != 2) {
-    drupal_set_message('Invalid Namspace Provided: ' . $string, 'Error');
-    return FALSE;
-  }
-
-  $formfield['entity_namespace'] = $bits[0];
-  $formfield['field_name'] = $bits[1];
-
-  return $formfield;
+  return FlexiformElement::splitElementNamespace($string);
 }
 
 /**
@@ -576,8 +613,9 @@ function flexiform_field_create_instance($instance) {
 
   // Construct the form field settings array.
   $form_field = array(
+    'type' => 'field',
     'field_name' => $instance['field_name'],
-    'entity_namespace' => 'this_submission',
+    'entity_namespace' => 'base_entity',
     'instance' => array(
       'label' => $instance['label'],
       'widget' => array(
@@ -586,8 +624,8 @@ function flexiform_field_create_instance($instance) {
     ),
   );
 
-  // Add the field to the flexiform->fields array.
-  $flexiform->fields['this_submission'][$instance['field_name']] = $form_field;
+  // Add the field to the flexiform->elements array.
+  $flexiform->elements['base_entity'][$instance['field_name']] = $form_field;
 
   // Save the flexiform.
   $flexiform->save();
@@ -628,7 +666,8 @@ function flexiform_entity_getter_info($getter = NULL) {
         foreach ($getters_module as $getter_name => $getter) {
           $getter += array(
             'params' => array(),
-            'callback' => 'flexiform_entity_getter_' . $getter_name,
+            'getter callback' => 'flexiform_entity_getter_' . $getter_name,
+            'setter callback' => 'flexiform_entity_setter_' . $getter_name,
             'file' => $module . 'flexiform.inc',
             'module' => $module,
           );
@@ -694,11 +733,11 @@ function flexiform_entity_type_get_getters($entity_type) {
 function flexiform_flexiform_entity_getter_info() {
   $getters = array();
 
-  // Flexiform Submission Getters
-  $getters['this_submission'] = array(
-    'label' => 'This Flexiform Submission',
-    'description' => 'The Flexiform Submission instance',
-    'entity_types' => array('flexiform_submission'),
+  // Base entity getter.
+  $getters['base_entity'] = array(
+    'label' => 'Base Entity',
+    'description' => 'The Base Entity for this Flexiform',
+    'entity_types' => array_keys(entity_get_info()),
     'file' => 'includes/flexiform.flexiform.inc',
   );
 
@@ -716,13 +755,31 @@ function flexiform_flexiform_entity_getter_info() {
     'description' => 'Load a Profile 2 Basede on a User',
     'params' => array(
       'user' => array(
-        'type' => 'entity',
         'entity_type' => 'user',
       ),
     ),
     'entity_types' => array('profile2'),
     'file' => 'profile2.flexiform.inc',
   );
+
+  // Getters for data sets.
+  foreach (party_get_data_set_info() as $data_set_name => $info) {
+    $getters[$data_set_name . '_from_party'] = array(
+      'label' => t('@label data set', array('@label' => $info['label'])),
+      'description' => t('Load a data set from a party.'),
+      'data_set_name' => $data_set_name,
+      'getter callback' => 'flexiform_entity_getter_party_data_set',
+      'setter callback' => 'flexiform_entity_setter_party_data_set',
+      'params' => array(
+        'party' => array(
+          'entity_type' => 'party',
+        ),
+      ),
+      'entity_types' => array($info['entity type']),
+      'file' => 'party.flexiform.inc',
+    );
+  }
+
 
   return $getters;
 }

@@ -209,7 +209,7 @@ function flexiform_update_7003() {
     'serialize' => TRUE,
     'description' => 'A serialized array of elements related to this flexiform.',
   ));
-  
+
   // Update existing flexiform configurations.
   db_update('flexiform')
     ->fields(array(

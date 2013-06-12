@@ -50,7 +50,7 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
 
     );
 
-    // Add menu items to add each different type of entity.
+    /* Add menu items to add each different type of entity.
     foreach (flexiform_get_flexiforms() as $form) {
       $items['flexiform/' . $form->form] = array(
         'title' => 'Add ' . $form->label,
@@ -107,7 +107,7 @@ class FlexiformSubmissionUIController extends EntityDefaultUIController {
         'file' => 'flexiform_submission.admin.inc',
         'file path' => drupal_get_path('module', $this->entityInfo['module'])
       );
-    }
+    }*/
 
     return $items;
   }

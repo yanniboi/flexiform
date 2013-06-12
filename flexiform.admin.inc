@@ -52,6 +52,63 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
     '#description' => t('A unique machine-readable name for this flexiform. It must only contain lowercase letters, numbers, and underscores.'),
   );
 
+  $entity_info = entity_get_info();
+  $entity_type_options = array();
+  foreach ($entity_info as $type => $info) {
+    $entity_type_options[$type] = $info['label'];
+  }
+  $form['base_entity'] = array(
+    '#type' => 'select',
+    '#title' => t('Base Entity'),
+    '#description' => t('The base entity type for this form. Other entities can be added based on relationships to this entity.'),
+    '#options' => $entity_type_options,
+    '#empty_option' => t('- Select an Entity Type -'),
+    '#default_value' => !empty($flexiform->base_entity) ? $flexiform->base_entity : FALSE,
+    '#required' => TRUE,
+    '#ajax' => array(
+      'event' => 'change',
+      'method' => 'replace',
+      'wrapper' => 'flexiform-base-entity-bundle-selector',
+      'callback' => 'flexiform_form_base_entity_bundle_selector',
+    ),
+  );
+
+  if (isset($form_state['values']['base_entity'])) {
+    $entity_type = $form_state['values']['base_entity'];
+  }
+  else if (!empty($flexiform->base_entity)) {
+    $entity_type = $flexiform->base_entity;
+  }
+  else {
+    $entity_type = NULL;
+  }
+
+  $bundle_options = array();
+  if ($entity_type) {
+    $entity_info = entity_get_info($entity_type);
+    foreach ($entity_info['bundles'] as $bundle => $info) {
+      $bundle_options[$bundle] = $info['label'];
+    }
+  }
+
+  $default_bundle = FALSE;
+  if (!empty($flexiform->base_entity) && !empty($flexiform->base_entity_bundle)
+    && ($flexiform->base_entity == $entity_type)) {
+    $default_bundle = $flexiform->base_entity_bundle;
+  }
+  $form['base_entity_bundle'] = array(
+    '#type' => 'select',
+    '#title' => t('Base Entity Bundle'),
+    '#description' => t('The base entity bundle for this form.'),
+    '#options' => $bundle_options,
+    '#empty_option' => t('- Select a Bundle -'),
+    '#default_value' => $default_bundle,
+    '#required' => TRUE,
+    '#prefix' => '<div id="flexiform-base-entity-bundle-selector">',
+    '#suffix' => '</div>',
+  );
+
+
   $form['form_group'] = array(
     '#title' => t('Group'),
     '#description' => t('Select a group for this flexiform. Some groups do special things with forms.'),
@@ -67,7 +124,7 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
     }
   }
   else {
-    $group = $flexiform->form_group ? $flexiform->form_group: key($groups);
+    $group = !empty($flexiform->form_group) ? $flexiform->form_group: key($groups);
 
     $form['form_group_display'] = $form['form_group'];
     $form['form_group_display']['#type'] = 'item';
@@ -95,22 +152,34 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
 }
 
 /**
+ * AJAX Callback to build the base entity bundle select list.
+ */
+function flexiform_form_base_entity_bundle_selector($form, $form_state) {
+  return $form['base_entity_bundle'];
+}
+
+/**
  * Form API submit callback for the type form.
  */
 function flexiform_form_submit(&$form, &$form_state) {
   $flexiform = entity_ui_form_submit_build_entity($form, $form_state);
 
+  $base_entity_info = entity_get_info($flexiform->base_entity);
   if (empty($flexiform->entities)) {
     $flexiform->entities = array(
-      'this_submission' => array(
-        'label' => t('This Flexiform Submission'),
-        'entity_type' => 'flexiform_submission',
-        'bundle' => $flexiform->form,
+      'base_entity' => array(
+        'label' => t('Base @entity_type', array('@entity_type' => $base_entity_info['label'])),
+        'entity_type' => $flexiform->base_entity,
+        'bundle' => $flexiform->base_entity_bundle,
         'create' => TRUE,
-        'getter' => 'this_submission',
+        'getter' => 'base_entity',
         'weight' => -10,
       ),
     );
+  }
+
+  if (empty($flexiform->elements)) {
+    $flexiform->elements = array();
   }
 
   $flexiform->save();
@@ -135,25 +204,22 @@ function flexiform_manage_form_fields_form($form, &$form_state, $flexiform) {
   $entities = $flexiform->entities;
 
   // Get the fields in the flexiform deff
-  $formfields = array();
-  foreach ($flexiform->fields as $entity_namespace => $entity_fields) {
-    foreach ($entity_fields as $field_name => $settings) {
-      $settings['field_name'] = $field_name;
-      $settings['entity_namespace'] = $entity_namespace;
-      $settings['entity_type'] = $entities[$entity_namespace]['entity_type'];
-      $settings['bundle'] = $entities[$entity_namespace]['bundle'];
-      $formfields[$entity_namespace . "__" . $field_name] = $settings;
+  $elements = array();
+  foreach ($flexiform->elements as $entity_namespace => $formelements) {
+    foreach ($formelements as $element_name => $settings) {
+      $element_namespace = FlexiformElement::makeElementNamespace($settings['type'], $entity_namespace, $element_name);
+      $elements[$element_namespace] = FlexiformElement::getElement($flexiform, $settings['type'], $element_namespace, $settings);
     }
   };
 
   $form += array(
     '#flexiform' => $flexiform,
-    '#formfields' => array_keys($formfields),
+    '#elements' => array_keys($elements),
   );
 
   $form_state += array(
     '#flexiform' => $flexiform,
-    '#formfields' => $formfields,
+    '#elements' => $elements,
   );
 
   $table = array(
@@ -163,8 +229,9 @@ function flexiform_manage_form_fields_form($form, &$form_state, $flexiform) {
       t('Label'),
       t('Weight'),
       t('Parent'),
+      t('Type'),
       t('Entity'),
-      t('Field'),
+      t('Name'),
       t('Widget'),
       array('data' => t('Operations'), 'colspan' => 2),
     ),
@@ -179,72 +246,77 @@ function flexiform_manage_form_fields_form($form, &$form_state, $flexiform) {
     ),
   );
 
-  $widget_types = field_info_widget_types();
-  foreach($formfields as $field_namespace => $formfield) {
-    $field = field_info_field($formfield['field_name']);
-    $instance = field_info_instance($formfield['entity_type'], $formfield['field_name'], $formfield['bundle']);
+  foreach($elements as $element_namespace => $element) {
+    $element_path = 'admin/structure/flexiforms/manage/' . $flexiform->form . '/form-fields/' . $element_namespace;
 
-    // Build the fake instance for this form (incase the widget has changed -
-    // we would normally have to be careful of default_value but that doesn't
-    // figure here, so we should be fine.
-    $forminstance = array_replace_recursive($instance, $formfield['instance']);
+    if ($element instanceof FlexiformElementField) {
+      $widget = array(
+        '#type' => 'link',
+        '#title' => t($element->getWidgetLabel()),
+        '#href' => $element_path . '/widget-type',
+        '#options' => array('attributes' => array('title' => t('Change widget type.'))),
+      );
+    }
+    else {
+      $widget = array(
+        '#type' => 'markup',
+        '#markup' => '',
+      );
+    }
 
-    $field_path = 'admin/structure/flexiforms/manage/' . $flexiform->form . '/form-fields/' . $field_namespace;
-
-    $table[$field_namespace] = array(
+    $table[$element_namespace] = array(
       '#attributes' => array('class' => array('draggable', 'tabledrag-leaf')),
       '#row_type' => 'field',
+      '#flexiform_element' => $element,
       '#region_callback' => 'flexiform_field_form_row_region',
       'label' => array(
-        '#markup' => check_plain($forminstance['label']),
+        '#markup' => $element->label(),
       ),
       'weight' => array(
         '#type' => 'textfield',
-        '#title' => t('Weight for @title', array('@title' => $forminstance['label'])),
+        '#title' => t('Weight for @title', array('@title' => $element->label())),
         '#title_display' => 'invisible',
-        '#default_value' => $forminstance['widget']['weight'],
+        '#default_value' => $element->getWeight(),
         '#size' => 3,
         '#attributes' => array('class' => array('field-weight')),
       ),
       'parent_wrapper' => array(
         'parent' => array(
           '#type' => 'select',
-          '#title' => t('Parent for @title', array('@title' => $forminstance['label'])),
+          '#title' => t('Parent for @title', array('@title' =>  $element->label())),
           '#title_display' => 'invisible',
           '#options' => $table['#parent_options'],
           '#empty_value' => '',
           '#attributes' => array('class' => array('field-parent')),
-          '#parents' => array('fields', $field_namespace, 'parent'),
+          '#parents' => array('fields', $element_namespace, 'parent'),
         ),
         'hidden_name' => array(
           '#type' => 'hidden',
-          '#default_value' => $field_namespace,
+          '#default_value' => $element_namespace,
           '#attributes' => array('class' => array('field-name')),
         ),
       ),
+      'type' => array(
+        '#markup' => $element->type(),
+      ),
       'entity' => array(
-        '#markup' => $formfield['entity_namespace'],
+        '#markup' => $element->getEntityNamespace(),
       ),
       'field' => array(
-        '#markup' => $formfield['field_name'],
+        '#markup' => $element->name(),
       ),
-      'widget_type' => array(
-        '#type' => 'link',
-        '#title' => t($widget_types[$forminstance['widget']['type']]['label']),
-        '#href' => $field_path . '/widget-type',
-        '#options' => array('attributes' => array('title' => t('Change widget type.'))),
-      ),
+      'widget_type' => $widget,
       'configure' => array(
         '#type' => 'link',
         '#title' => t('configure'),
-        '#href' => $field_path,
-        '#options' => array('attributes' => array('title' => t('Configure field instance settings for this form'))),
+        '#href' => $element_path,
+        '#options' => array('attributes' => array('title' => t('Configure settings for this form'))),
       ),
       'remove' => array(
         '#type' => 'link',
         '#title' => t('remove'),
-        '#href' => $field_path . '/remove',
-        '#options' => array('attributes' => array('title' => t('Remove this field.'))),
+        '#href' => $element_path . '/remove',
+        '#options' => array('attributes' => array('title' => t('Remove this element.'))),
       ),
     );
   }
@@ -257,12 +329,20 @@ function flexiform_manage_form_fields_form($form, &$form_state, $flexiform) {
   }
 
   if (isset($form_state['values']['fields']['_add_field']['entity'])) {
-    $entity_namespace = $form_state['values']['fields']['_add_field']['entity'];
+    $field_entity_namespace = $form_state['values']['fields']['_add_field']['entity'];
   }
   else {
-    $entity_namespace = NULL;
+    $field_entity_namespace = NULL;
   }
-  $formfield_options = flexiform_field_field_options($flexiform, $entity_namespace);
+  $field_options = flexiform_field_field_options($flexiform, $field_entity_namespace);
+
+  if (isset($form_state['values']['fields']['_add_form']['entity'])) {
+    $form_entity_namespace = $form_state['values']['fields']['_add_form']['entity'];
+  }
+  else {
+    $form_entity_namespace = NULL;
+  }
+  $form_options = flexiform_field_form_options($flexiform, $form_entity_namespace);
 
   if ($entity_options) {
     $name = '_add_field';
@@ -305,6 +385,9 @@ function flexiform_manage_form_fields_form($form, &$form_state, $flexiform) {
           '#attributes' => array('class' => array('field-name')),
         ),
       ),
+      'type' => array(
+        '#markup' => 'Field',
+      ),
       'entity' => array(
         '#type' => 'select',
         '#title' => t('The Enitity'),
@@ -325,11 +408,83 @@ function flexiform_manage_form_fields_form($form, &$form_state, $flexiform) {
         '#type' => 'select',
         '#title' => t('The Field'),
         '#title_display' => 'invisible',
-        '#options' => $formfield_options,
+        '#options' => $field_options,
         '#empty_option' => t('- Select an Field -'),
         '#description' => t('Pick a Field'),
         '#attributes' => array('class' => array('entity-select')),
         '#prefix' => '<div id="flexiform-field-selector"><div class="add-new-placeholder">&nbsp;</div>',
+        '#suffix' => '</div>',
+      ),
+    );
+
+    $name = '_add_form';
+    $table[$name] = array(
+      '#attributes' => array('class' => array('draggable', 'tabledrag-leaf', 'add-new')),
+      '#row_type' => 'add_field',
+      '#region_callback' => 'flexiform_field_form_row_region',
+      'label' => array(
+        '#type' => 'textfield',
+        '#title' => 'Lable',
+        '#title_display' => 'invisible',
+        '#size' => 15,
+        '#description' => t('Label'),
+        '#prefix' => '<div class="label-input"><div class="add-new-placeholder">' . t('Add sub-form') .'</div>',
+        '#suffix' => '</div>',
+      ),
+      'weight' => array(
+        '#type' => 'textfield',
+        '#default_value' => $max_weight + 1,
+        '#size' => 3,
+        '#title_display' => 'invisible',
+        '#title' => t('Weight for new form'),
+        '#attributes' => array('class' => array('field-weight')),
+        '#prefix' => '<div class="add-new-placeholder">&nbsp;</div>',
+      ),
+      'parent_wrapper' => array(
+        'parent' => array(
+          '#type' => 'select',
+          '#title' => t('Parent for sub-form'),
+          '#title_display' => 'invisible',
+          '#options' => $table['#parent_options'],
+          '#empty_value' => '',
+          '#attributes' => array('class' => array('field-parent')),
+          '#prefix' => '<div class="add-new-placeholder">&nbsp;</div>',
+          '#parents' => array('fields', $name, 'parent'),
+        ),
+        'hidden_name' => array(
+          '#type' => 'hidden',
+          '#default_value' => $name,
+          '#attributes' => array('class' => array('field-name')),
+        ),
+      ),
+      'type' => array(
+        '#markup' => 'Flexiform',
+      ),
+      'entity' => array(
+        '#type' => 'select',
+        '#title' => t('The Enitity'),
+        '#title_display' => 'invisible',
+        '#options' => $entity_options,
+        '#empty_option' => t('- Select an Entity -'),
+        '#description' => t('Entity from which to take the field'),
+        '#attributes' => array('class' => array('entity-select')),
+        '#prefix' => '<div class="add-new-placeholder">&nbsp;</div>',
+        '#ajax' => array(
+          'event' => 'change',
+          'method' => 'replace',
+          'wrapper' => 'flexiform-form-selector',
+          'callback' => 'flexiform_manage_form_fields_forms',
+        ),
+      ),
+      'field' => array(
+        '#type' => 'select',
+        '#title' => t('The Form'),
+        '#title_display' => 'invisible',
+        '#options' => $form_options,
+        '#empty_option' => t('- Select a Form -'),
+        '#description' => t('Pick a Form'),
+        '#attributes' => array('class' => array('entity-select')),
+        '#prefix' => '<div id="flexiform-form-selector"><div class="add-new-placeholder">&nbsp;</div>',
         '#suffix' => '</div>',
       ),
     );
@@ -370,6 +525,22 @@ function flexiform_manage_form_fields_form_validate($form, &$form_state) {
       form_set_error('fields][_add_field][label', t('Add field: you must choose a field'));
     }
   }
+
+  $add_form = $form_state['values']['fields']['_add_form'];
+  if (array_filter(array($add_form['label'], $add_form['entity'], $add_form['field']))) {
+    // Missing Label
+    if (!$add_form['label']) {
+      form_set_error('fields][_add_form][label', t('Add form: you must provide a label'));
+    }
+
+    if (!$add_form['entity']) {
+      form_set_error('fields][_add_form][entity', t('Add form: you must choose an entity'));
+    }
+
+    if (!$add_form['field']) {
+      form_set_error('fields][_add_form][label', t('Add form: you must choose a field'));
+    }
+  }
 }
 
 /**
@@ -378,32 +549,48 @@ function flexiform_manage_form_fields_form_validate($form, &$form_state) {
 function flexiform_manage_form_fields_form_submit($form, &$form_state) {
   $form_values = $form_state['values']['fields'];
   $flexiform = $form_state['#flexiform'];
-  $formfields = $form_state['#formfields'];
+  $elements = $form_state['#elements'];
 
-  $formfield_path = '';
+  $element_path = '';
 
-  foreach($form_values as $formfield_namespace => $values) {
-    if (in_array($formfield_namespace, $form['#formfields'])) {
-      $formfield = $formfields[$formfield_namespace];
-      $flexiform->fields[$formfield['entity_namespace']][$formfield['field_name']]['instance']['widget']['weight'] = $values['weight'];
+  foreach($form_values as $element_namespace => $values) {
+    if (in_array($element_namespace, $form['#elements'])) {
+      $element = $elements[$element_namespace];
+      $element->setWeight($values['weight']);
+      $flexiform->elements[$element->getEntityNamespace()][$element->name()] = $element->toSettingsArray();
     }
   }
 
   // Add a field
-  $formfield = array();
+  $settings = array();
   if (!empty($form_values['_add_field']['field'])) {
     $values = $form_values['_add_field'];
 
-    $formfield['field_name'] = $values['field'];
-    $formfield['entity_namespace'] = $values['entity'];
-    $formfield['instance']['label'] = $values['label'];
-    $formfield['instance']['widget']['weight'] = $values['weight'];
+    $settings['field_name'] = $values['field'];
+    $settings['entity_namespace'] = $values['entity'];
 
-    $flexiform->fields[$values['entity']][$values['field']] = $formfield;
+    $settings['instance']['label'] = $values['label'];
+    $settings['instance']['widget']['weight'] = $values['weight'];
+
+    $element = FlexiformElement::getElement($flexiform, 'field', FlexiformElement::makeElementNamespace('field', $values['entity'], $values['field']), $settings);
+    $flexiform->elements[$values['entity']][$values['field']] = $element->toSettingsArray();
 
     // Send the User to the Instance Settings page
   }
 
+  // Add a form
+  $settings = array();
+  if (!empty($form_values['_add_form']['field'])) {
+    $values = $form_values['_add_form'];
+
+    $settings['entity_namespace'] = $values['entity'];
+    $settings['form'] = $values['field'];
+    $settings['label'] = $values['label'];
+    $settings['weight'] = $values['weight'];
+
+    $element = FlexiformElement::getElement($flexiform, 'flexiform', FlexiformElement::makeElementNamespace('flexiform', $values['entity'], $values['field']), $settings);
+    $flexiform->elements[$values['entity']][$values['field']] = $element->toSettingsArray();
+  }
   $flexiform->save();
 
   drupal_set_message(t('Your settings have been saved'));
@@ -417,9 +604,16 @@ function flexiform_manage_form_fields_fields($form, $form_state) {
 }
 
 /**
+ * Ajax callback to update the forms available
+ */
+function flexiform_manage_form_fields_forms($form, $form_state) {
+  return $form['fields']['_add_form']['field'];
+}
+
+/**
  * Configure flexiform field instance settings
  */
-function flexiform_field_configure_form($form, &$form_state, $flexiform, $formfield) {
+function flexiform_field_configure_form($form, &$form_state, $flexiform, $element) {
   $form['temp']['#markup'] = 'Temporary';
 
   return $form;
@@ -428,7 +622,7 @@ function flexiform_field_configure_form($form, &$form_state, $flexiform, $formfi
 /**
  * Remove a flexiform field
  */
-function flexiform_field_remove_form($form, &$form_state, $flexiform, $formfield) {
+function flexiform_field_remove_form($form, &$form_state, $flexiform, $element) {
   $form['temp']['#markup'] = 'Temporary';
 
   return $form;
@@ -437,7 +631,7 @@ function flexiform_field_remove_form($form, &$form_state, $flexiform, $formfield
 /**
  * Choose a widget type
  */
-function flexiform_field_widget_type_form($form, &$form_state, $flexiform, $formfield) {
+function flexiform_field_widget_type_form($form, &$form_state, $flexiform, $element) {
   $form['temp']['#markup'] = 'Temporary';
 
   return $form;
@@ -488,7 +682,6 @@ function flexiform_manage_form_entities_form($form, &$form_state, $flexiform) {
   $getters = flexiform_entity_getter_info();
   foreach($entities as $entity_namespace => $settings) {
     $entity_path = 'admin/structure/flexiforms/manage/' . $flexiform->form . '/form-entities/' . $entity_namespace;
-
     $table[$entity_namespace] = array(
       '#attributes' => array('class' => array('draggable', 'tabledrag-leaf')),
       '#row_type' => 'entity',
@@ -561,7 +754,20 @@ function flexiform_manage_form_entities_form($form, &$form_state, $flexiform) {
   $getter_options = array();
   if (!empty($entity_type)) {
     foreach (flexiform_entity_type_get_getters($entity_type) as $getter => $info) {
-      $getter_options[$getter] = $info['label'];
+      if (!empty($info['params'])) {
+        $parameter = reset($info['params']);
+        $required_type = $parameter['entity_type'];
+
+        foreach ($flexiform->entities as $entity_namespace => $settings) {
+          if ($settings['entity_type'] == $required_type) {
+            $key = $getter . ':' . $entity_namespace;
+            $getter_options[$key] = t('@label from @entity', array('@label' => $info['label'], '@entity' => $settings['label']));
+          }
+        }
+      }
+      else {
+        $getter_options[$getter] = $info['label'];
+      }
     }
   }
 
@@ -714,7 +920,7 @@ function flexiform_manage_form_entities_form_submit($form, &$form_state) {
   $entity_path = '';
 
   foreach($form_values as $entity_namespace => $values) {
-    $flexiform->entities[$entity_namepace]['weight'] = $values['weight'];
+    $flexiform->entities[$entity_namespace]['weight'] = $values['weight'];
   }
 
   // Add a field
@@ -732,6 +938,12 @@ function flexiform_manage_form_entities_form_submit($form, &$form_state) {
       'weight' => $values['weight'],
     );
 
+    $input = explode(':', $values['getter']);
+    if (count($input) > 1) {
+      $entity['getter'] = $input[0];
+      $entity['parameter'] = $input[1];
+    }
+
     $flexiform->entities[$entity['namespace']] = $entity;
 
     // Send the User to the Instance Settings page
@@ -747,9 +959,10 @@ function flexiform_manage_form_entities_form_submit($form, &$form_state) {
  */
 function flexiform_field_max_weight($flexiform) {
   $max_weight = 0;
-  foreach($flexiform->fields as $entity_namespace => $formfields) {
-    foreach($formfields as $field_namespace => $field) {
-      $weight = $field['instance']['widget']['weight'];
+  foreach($flexiform->elements as $entity_namespace => $elements) {
+    foreach($elements as $element_namespace => $settings) {
+      //@todo: Use an element class to get this right.
+      $weight = !empty($settings['weight']) ? $settings['weight'] : 0;
       if ($weight > $max_weight) {
         $max_weight = $weight;
       }
@@ -787,6 +1000,24 @@ function flexiform_field_field_options($flexiform, $entity_namespace = NULL) {
   $options = array();
   foreach ($instances as $instance) {
     $options[$instance['field_name']] = $instance['label'];
+  }
+
+  return $options;
+}
+
+/**
+ * Get all available forms for a given entity.
+ */
+function flexiform_field_form_options($flexiform, $entity_namespace = NULL) {
+  if (!isset($entity_namespace) || !isset($flexiform->entities[$entity_namespace])) {
+    return array();
+  }
+
+  $entity_info = $flexiform->entities[$entity_namespace];
+  $forms = flexiform_get_base_entity_forms($entity_info['entity_type'], $entity_info['bundle']);
+  $options = array();
+  foreach ($forms as $form) {
+    $options[$form->form] = $form->label;
   }
 
   return $options;
