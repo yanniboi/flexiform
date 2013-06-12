@@ -96,6 +96,13 @@ function flexiform_schema() {
         'not null' => TRUE,
         'default' => 'general',
       ),
+      'builder' => array(
+        'description' => 'The builder class for this form',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 'FlexiformBuilderFlexiform',
+      ),
       'base_entity' => array(
         'description' => 'The base entity type of the form.',
         'type' => 'varchar',
@@ -252,5 +259,25 @@ function flexiform_update_7004() {
   db_update('flexiform')
     ->expression('path', "CONCAT('flexiform/', form)")
     ->expression('edit_path', "CONCAT('flexiform/', form, '/%')")
+    ->execute();
+}
+
+/**
+ * Add the builder field to flexiform.
+ */
+function flexiform_update_7005() {
+  db_add_field('flexiform', 'builder', array(
+    'description' => 'The builder class for this form',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => 'FlexiformFlexiform',
+  ));
+
+  // Update existing flexiform configurations.
+  db_update('flexiform')
+    ->fields(array(
+      'builder' => 'FlexiformBuilderFlexiform',
+    ))
     ->execute();
 }

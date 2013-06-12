@@ -74,7 +74,10 @@ function flexiform_wrapper($flexiform, $base_entity) {
 function flexiform($form, &$form_state, $flexiform, $base_entity, $include_actions = TRUE) {
   global $user;
 
-  $form['#flexiform'] = $flexiform;
+  $form['#flexiform_builder'] = $builder = $flexiform->getBuilder($base_entity);
+  $form = $builder->form($form, $form_state);
+
+  /*$form['#flexiform'] = $flexiform;
   $form['#flexiform_base_entity'] = $base_entity;
   $form['#flexiform_entities'] = flexiform_prepare_entities($flexiform, $base_entity);
 
@@ -87,7 +90,7 @@ function flexiform($form, &$form_state, $flexiform, $base_entity, $include_actio
     }
 
     flexiform_embed_entity_elements($namespace, $flexiform, $entity, $elements, $form, $form_state);
-  }
+  }*/
 
   if ($include_actions) {
     $form['actions'] = array(
@@ -122,54 +125,14 @@ function flexiform($form, &$form_state, $flexiform, $base_entity, $include_actio
  * Validation callback for a flexiform stuff.
  */
 function flexiform_validate($form, &$form_state) {
-  foreach (element_children($form) as $element_namespace) {
-    if (empty($form[$element_namespace]['#flexiform_element'])) {
-      continue;
-    }
-
-    $element = $form[$element_namespace]['#flexiform_element'];
-    $entity = $form['#flexiform_entities'][$element->getEntityNamespace()];
-    $element->formValidate($form, $form_state, $entity);
-  }
+  $form['#flexiform_builder']->formValidate($form, $form_state);
 }
 
 /**
  * Submit callback for a flexiform.
  */
 function flexiform_submit($form, &$form_state) {
-  $flexiform = $form['#flexiform'];
-
-  foreach (element_children($form) as $element_namespace) {
-    if (empty($form[$element_namespace]['#flexiform_element'])) {
-      continue;
-    }
-
-    $element = $form[$element_namespace]['#flexiform_element'];
-    $entity = $form['#flexiform_entities'][$element->getEntityNamespace()];
-    $element->formSubmit($form, $form_state, $entity);
-  }
-
-  foreach ($flexiform->entities as $entity_namespace => $settings) {
-    if (isset($settings['getter'])) {
-      $getter = flexiform_entity_getter_info($settings['getter']);
-
-      if (isset($getter['file']) && file_exists(drupal_get_path('module', $getter['module']) . '/' . $getter['file'])) {
-        include_once drupal_get_path('module', $getter['module']) . '/' . $getter['file'];
-      }
-
-      $callback = $getter['setter callback'];
-      if (function_exists($callback)) {
-        $base_entity = $form['#flexiform_base_entity'];
-        $entity = $form['#flexiform_entities'][$entity_namespace];
-        $entities = $form['#flexiform_entities'];
-        $callback($flexiform, $base_entity, $entity, $settings['entity_type'], $entities, $entity_namespace, $getter);
-      }
-    }
-  }
-
-  if (module_exists('rules')) {
-    rules_invoke_event_by_args('flexiform_submit_'.$flexiform->form, $form['#flexiform_entities']);
-  }
+  $form['#flexiform_builder']->formSubmit($form, $form_state);
 }
 
 /**

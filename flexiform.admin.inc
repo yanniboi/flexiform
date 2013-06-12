@@ -107,9 +107,53 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
     '#required' => TRUE,
     '#prefix' => '<div id="flexiform-base-entity-bundle-selector">',
     '#suffix' => '</div>',
+    '#ajax' => array(
+      'event' => 'change',
+      'method' => 'replace',
+      'wrapper' => 'flexiform-builder-selector',
+      'callback' => 'flexiform_form_builder_selector',
+    ),
     '#disabled' => empty($flexiform->is_new),
   );
 
+  if (isset($form_state['values']['base_entity_bundle'])) {
+    $bundle = $form_state['values']['base_entity_bundle'];
+  }
+  else if (!empty($flexiform->base_entity_bundle)) {
+    $bundle = $flexiform->base_entity_bundle;
+  }
+  else {
+    $bundle = NULL;
+  }
+
+  $builder_options = array();
+  $builder_description = '';
+  if ($bundle && $entity_type) {
+    $builder_info = flexiform_entity_type_get_builders($entity_type);
+    foreach ($builder_info as $builder => $info) {
+      $builder_options[$builder] = $info['label'];
+      $builder_description .= t('%label: @desc<br />', array('%label' => $info['label'], '@desc' => $info['description']));
+    }
+  }
+
+  $default_builder = FALSE;
+  $default_builder_desc = '';
+  if (!empty($flexiform->base_entity) && !empty($flexiform->builder)
+    && ($flexiform->base_entity == $entity_type)) {
+    $default_builder = $flexiform->builder;
+  }
+  $form['builder'] = array(
+    '#type' => 'select',
+    '#title' => t('Builder'),
+    '#description' => t('The builder to use to render this form.<br />!builder_desc', array('!builder_desc' => $builder_description)),
+    '#options' => $builder_options,
+    '#empty_option' => t('- Select a Builder -'),
+    '#default_value' => $default_builder,
+    '#required' => TRUE,
+    '#prefix' => '<div id="flexiform-builder-selector">',
+    '#suffix' => '</div>',
+    '#disabled' => empty($flexiform->is_new),
+  );
 
   $form['form_group'] = array(
     '#title' => t('Group'),
@@ -201,6 +245,13 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
  */
 function flexiform_form_base_entity_bundle_selector($form, $form_state) {
   return $form['base_entity_bundle'];
+}
+
+/**
+ * AJAX Callback to build the builder select list.
+ */
+function flexiform_form_builder_selector($form, $form_state) {
+  return $form['builder'];
 }
 
 /**

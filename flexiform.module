@@ -680,6 +680,101 @@ function flexifrom_get_groups() {
 }
 
 //-----------------------------------------------------------------------------
+// Flexiform Builder API
+
+/**
+ * Get info about all available builders.
+ */
+function flexiform_builder_info($builder = NULL) {
+  $builders = &drupal_static(__FUNCTION__);
+
+  if (!isset($builders)) {
+    if ($cache = cache_get('flexiform:builder_info', 'cache')) {
+      $builders = $cache->data;
+    }
+    else {
+      $builders = array();
+      foreach (module_implements('flexiform_builder_info') as $module) {
+        // Due to http://drupal.org/node/890660 we can't use module_invoke_all()
+        // because we need to know the provenance of each set.
+        $builders_module = module_invoke($module, 'flexiform_builder_info');
+        foreach ($builders_module as $builder_name => $builder) {
+          $builder += array(
+            'class' => $builder_name,
+            'label' => $builder_name,
+            'module' => $module,
+            'entity_types' => array(),
+          );
+          $builders[$builder_name] = $builder;
+        }
+      }
+
+      // Alter the data sets with hook_party_data_set_info_alter().
+      drupal_alter('flexiform_builder_info', $builders);
+
+      cache_set('flexiform:builder_info', $builders);
+    }
+  }
+
+  if (!empty($builder)) {
+    return $builders[$builder];
+  }
+  else {
+    return $builders;
+  }
+
+  return $builders;
+}
+
+/**
+ * Get the builders available for a particular base entity type.
+ */
+function flexiform_entity_type_get_builders($entity_type) {
+  // If this isn't an entity type return false
+  if (!entity_get_info($entity_type)) {
+    return FALSE;
+  }
+
+  $builders = flexiform_builder_info();
+  $applicable_builders = array();
+  foreach ($builders as $builder => $info) {
+    if (empty($info['entity_types'])
+      || in_array($entity_type, $info['entity_types'])) {
+      $applicable_builders[$builder] = $info;
+    }
+  }
+  return $applicable_builders;
+}
+
+/**
+ * Implements hook_flexiform_builder_info().
+ */
+function flexiform_flexiform_builder_info() {
+  $builders = array();
+
+  $builders['FlexiformBuilderFlexiform'] = array(
+    'class' => 'FlexiformBuilderFlexiform',
+    'label' => t('Flexiform Form Builder'),
+    'description' => t('The flexiform custom form builder. Use the configuration pages to add fields and entities to the form.'),
+  );
+
+  $fieldable_entities = array();
+  foreach (entity_get_info() as $entity_type => $info) {
+    if ($info['fieldable']) {
+      $fieldable_entities[] = $entity_type;
+    }
+  }
+  $builders['FlexiformBuilderEntityForm'] = array(
+    'class' => 'FlexiformBuilderEntityForm',
+    'label' => t('Entity Field Form'),
+    'description' => t('Render the standard entity field form.'),
+    'entity_types' => $fieldable_entities,
+  );
+
+  return $builders;
+}
+
+//-----------------------------------------------------------------------------
 // Entity Getter and Setter API
 
 /**
@@ -814,7 +909,6 @@ function flexiform_flexiform_entity_getter_info() {
       'file' => 'party.flexiform.inc',
     );
   }
-
 
   return $getters;
 }
