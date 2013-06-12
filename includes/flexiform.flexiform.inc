@@ -77,21 +77,6 @@ function flexiform($form, &$form_state, $flexiform, $base_entity, $include_actio
   $form['#flexiform_builder'] = $builder = $flexiform->getBuilder($base_entity);
   $form = $builder->form($form, $form_state);
 
-  /*$form['#flexiform'] = $flexiform;
-  $form['#flexiform_base_entity'] = $base_entity;
-  $form['#flexiform_entities'] = flexiform_prepare_entities($flexiform, $base_entity);
-
-  foreach($form['#flexiform_entities'] as $namespace => $entity) {
-    $elements = isset($flexiform->elements[$namespace]) ? $flexiform->elements[$namespace] : FALSE;
-
-    // If there are no elements for this namespace skip it.
-    if (!$elements) {
-      continue;
-    }
-
-    flexiform_embed_entity_elements($namespace, $flexiform, $entity, $elements, $form, $form_state);
-  }*/
-
   if ($include_actions) {
     $form['actions'] = array(
       '#type' => 'container',
