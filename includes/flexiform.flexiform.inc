@@ -71,37 +71,35 @@ function flexiform_wrapper($flexiform, $base_entity) {
  * @return
  *   Constructed form array.
  */
-function flexiform($form, &$form_state, $flexiform, $base_entity, $include_actions = TRUE) {
+function flexiform($form, &$form_state, $flexiform, $base_entity) {
   global $user;
 
   $form['#flexiform_builder'] = $builder = $flexiform->getBuilder($base_entity);
   $form = $builder->form($form, $form_state);
 
-  if ($include_actions) {
-    $form['actions'] = array(
-      '#type' => 'container',
-      '#attributes' => array('class' => array('form-actions')),
-      '#weight' => 400,
-    );
+  $form['actions'] = array(
+    '#type' => 'container',
+    '#attributes' => array('class' => array('form-actions')),
+    '#weight' => 400,
+  );
 
-    // We add the form's #submit array to this button along with the actual submit
-    // handler to preserve any submit handlers added by a form callback_wrapper.
-    $submit = array();
+  // We add the form's #submit array to this button along with the actual submit
+  // handler to preserve any submit handlers added by a form callback_wrapper.
+  $submit = array();
 
-    if (!empty($form['#submit'])) {
-      $submit += $form['#submit'];
-    }
-
-    $form['actions']['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Save'),
-      '#submit' => $submit + array('flexiform_submit'),
-    );
-
-    // We append the validate handler to #validate in case a form callback_wrapper
-    // is used to add validate handlers earlier.
-    $form['#validate'][] = 'flexiform_validate';
+  if (!empty($form['#submit'])) {
+    $submit += $form['#submit'];
   }
+
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#submit' => $submit + array('flexiform_submit'),
+  );
+
+  // We append the validate handler to #validate in case a form callback_wrapper
+  // is used to add validate handlers earlier.
+  $form['#validate'][] = 'flexiform_validate';
 
   return $form;
 }

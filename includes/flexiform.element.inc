@@ -508,10 +508,12 @@ class FlexiformElementFlexiform extends FlexiformElement {
       '#parents' => $form['#parents'] + array($this->element_namespace),
     );
 
-    $form[$this->element_namespace] += flexiform($sub_form, $form_state, $this->getFlexiform(), $entity, FALSE);
+    $builder = $this->getFlexiform()->getBuilder($entity);
+    $form[$this->element_namespace]['#flexiform_builder'] = $builder;
     $form[$this->element_namespace]['#flexiform_element'] = $this;
     $form[$this->element_namespace]['#type'] = 'fieldset';
     $form[$this->element_namespace]['#title'] = $this->label;
+    $form[$this->element_namespace] += $builder->form($sub_form, $form_state, $entity); //flexiform($sub_form, $form_state, $this->getFlexiform(), $entity, FALSE);
 
     return $form;
   }
@@ -522,7 +524,7 @@ class FlexiformElementFlexiform extends FlexiformElement {
   public function formValidate($form, &$form_state, $entity, $language = LANGUAGE_NONE) {
     $sub_form = $form[$this->element_namespace];
 
-    flexiform_validate($sub_form, $form_state);
+    $sub_form['#flexiform_builder']->formValidate($sub_form, $form_state);
   }
 
   /**
@@ -531,7 +533,7 @@ class FlexiformElementFlexiform extends FlexiformElement {
   public function formSubmit($form, &$form_state, $entity, $language = LANGUAGE_NONE) {
     $sub_form = $form[$this->element_namespace];
 
-    flexiform_submit($sub_form, $form_state);
+    $sub_form['#flexiform_builder']->formSubmit($sub_form, $form_state);
   }
 
   /**
