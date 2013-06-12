@@ -647,7 +647,6 @@ function flexiform_manage_form_fields_form_submit($form, &$form_state) {
   $elements = $form_state['#elements'];
 
   $element_path = '';
-
   foreach($form_values as $element_namespace => $values) {
     if (in_array($element_namespace, $form['#elements'])) {
       $element = $elements[$element_namespace];

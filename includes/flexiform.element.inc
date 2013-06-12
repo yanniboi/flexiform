@@ -135,6 +135,17 @@ class FlexiformElement implements FlexiformElementInterface {
   }
 
   /**
+   * Get the form element.
+   */
+  public function form($form, &$form_state, $entity) {
+    $form[$this->element_namespace] = array(
+      '#weight' => $this->getWeight(),
+    );
+
+    return $form;
+  }
+
+  /**
    * Convert this object into a settings array.
    */
   public function toSettingsArray() {
@@ -314,6 +325,8 @@ class FlexiformElementField extends FlexiformElement{
    * Return the form element for this FlexiformElement.
    */
   public function form($form, &$form_state, $entity, $language = LANGUAGE_NONE) {
+    $form = parent::form($form, $form_state, $entity);
+
     $items = field_get_items($this->entity_type, $entity, $this->field_name, $language);
 
     if (!field_info_field($this->field_name)
@@ -454,6 +467,7 @@ class FlexiformElementFlexiform extends FlexiformElement {
     parent::__construct($flexiform, $namespace, $settings);
     $this->form = $settings['form'];
     $this->label = $settings['label'];
+    $this->weight = $settings['weight'];
   }
 
   /**
@@ -488,11 +502,13 @@ class FlexiformElementFlexiform extends FlexiformElement {
    * Overrides FlexiformElement::form().
    */
   public function form($form, &$form_state, $entity) {
+    $form = parent::form($form, $form_state, $entity);
+
     $sub_form = array(
       '#parents' => $form['#parents'] + array($this->element_namespace),
     );
 
-    $form[$this->element_namespace] = flexiform($sub_form, $form_state, $this->getFlexiform(), $entity, FALSE);
+    $form[$this->element_namespace] += flexiform($sub_form, $form_state, $this->getFlexiform(), $entity, FALSE);
     $form[$this->element_namespace]['#flexiform_element'] = $this;
     $form[$this->element_namespace]['#type'] = 'fieldset';
     $form[$this->element_namespace]['#title'] = $this->label;
