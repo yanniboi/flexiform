@@ -1016,6 +1016,9 @@ function flexiform_manage_form_entities_form_submit($form, &$form_state) {
   $entity_path = '';
 
   foreach($form_values as $entity_namespace => $values) {
+    if ($entity_namespace == '_add_entity') {
+      continue;
+    );
     $flexiform->entities[$entity_namespace]['weight'] = $values['weight'];
   }
 
