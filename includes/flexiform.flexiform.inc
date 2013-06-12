@@ -166,6 +166,10 @@ function flexiform_submit($form, &$form_state) {
       }
     }
   }
+
+  if (module_exists('rules')) {
+    rules_invoke_event_by_args('flexiform_submit_'.$flexiform->form, $form['#flexiform_entities']);
+  }
 }
 
 /**

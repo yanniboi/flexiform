@@ -358,7 +358,7 @@ function flexiform_submission_edit_form_simple_validate(&$form, &$form_state) {
 function flexiform_submission_edit_form_simple_submit(&$form, &$form_state) {
   $flexiform_submission = $form_state['flexiform_submission'];
 
-  field_attach_submit('flexiform_submission', $flexiform_submission, $form, &$form_state);
+  field_attach_submit('flexiform_submission', $flexiform_submission, $form, $form_state);
 
   // Add in created and changed times.
   if ($flexiform_submission->is_new = isset($flexiform_submission->is_new) ? $flexiform_submission->is_new : 0){

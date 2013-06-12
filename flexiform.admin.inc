@@ -25,7 +25,6 @@ class FlexiformUIController extends EntityDefaultUIController {
  * Generates the model type editing form.
  */
 function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
-
   if ($op == 'clone') {
     $flexiform->label .= ' (cloned)';
     $flexiform->form = '';
@@ -136,14 +135,14 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
 
   $form['path'] = array(
     '#title' => t('Path to Form'),
-    '#type' => 'text',
+    '#type' => 'textfield',
     '#default_value' => isset($flexiform->path) ? $flexiform->path : NULL,
     '#description' => t('The path to a new submission of this form. If blank the form will not be exposed at a path.'),
   );
 
   $form['edit_path'] = array(
     '#title' => t('Path to Edit Form'),
-    '#type' => 'text',
+    '#type' => 'textfield',
     '#default_value' => isset($flexiform->edit_path) ? $flexiform->edit_path : NULL,
     '#description' => t('The path to an edit version of this form. Must include a single \'%\' where the id of the base entity will go.'),
   );
@@ -161,6 +160,37 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
     '#value' => t('Save Flexiform'),
     '#weight' => 40,
   );
+
+  // Submit Rule Actions
+  // @todo: Remove dependency on rules admin by implement our own form for
+  //        adding submit rules.
+  if (module_exists('rules_admin') && !empty($flexiform->form)) {
+    $form['rules']['#type'] = 'fieldset';
+    $form['rules']['#title'] = t('Submit Actions');
+    $form['rules']['#collapsible'] = TRUE;
+    $form['rules']['#collapsed'] = TRUE;
+    $form['rules']['title']['#markup'] = '<h3>' . t('Submit Actions') . '</h3>';
+    $conditions = array(
+      'plugin' => 'reaction rule',
+      'active' => TRUE,
+      'event' => 'flexiform_submit_' . $flexiform->form,
+    );
+    $options = array(
+      'show plugin' => FALSE,
+      'base path' => current_path(),
+    );
+
+    $form['rules']['active'] = rules_ui()->overviewTable($conditions, $options);
+    $form['rules']['active']['#caption'] = t('Active Actions');
+    $form['rules']['active']['#empty'] = t('There are no active rules. <a href="!url">Add new Action</a>.', array('!url' => url('admin/config/workflow/rules/reaction/add')));
+
+    $conditions['active'] = FALSE;
+    $form['rules']['inactive'] = rules_ui()->overviewTable($conditions, $options);
+    $form['rules']['inactive']['#caption'] = t('Inactive Actions');
+    $form['rules']['inactive']['#empty'] = t('There are no inactive rules.');
+  }
+
+  dpm($form);
 
   return $form;
 }
