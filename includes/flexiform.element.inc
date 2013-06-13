@@ -516,6 +516,7 @@ class FlexiformElementField extends FlexiformElement{
       }
 
       $form[$this->element_namespace] = $form_field;
+      $form[$this->element_namespace]['#weight'] = $this->getWeight();
     }
 
     return $form;
