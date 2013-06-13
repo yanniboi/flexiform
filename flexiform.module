@@ -686,9 +686,9 @@ function flexifrom_get_groups() {
  * Get info about all available builders.
  */
 function flexiform_builder_info($builder = NULL) {
-  $builders = &drupal_static(__FUNCTION__);
+  $builders = &drupal_static(__FUNCTION__, array());
 
-  if (!isset($builders)) {
+  if (empty($builders)) {
     if ($cache = cache_get('flexiform:builder_info', 'cache')) {
       $builders = $cache->data;
     }
@@ -698,14 +698,14 @@ function flexiform_builder_info($builder = NULL) {
         // Due to http://drupal.org/node/890660 we can't use module_invoke_all()
         // because we need to know the provenance of each set.
         $builders_module = module_invoke($module, 'flexiform_builder_info');
-        foreach ($builders_module as $builder_name => $builder) {
-          $builder += array(
+        foreach ($builders_module as $builder_name => $builder_info) {
+          $builder_info += array(
             'class' => $builder_name,
             'label' => $builder_name,
             'module' => $module,
             'entity_types' => array(),
           );
-          $builders[$builder_name] = $builder;
+          $builders[$builder_name] = $builder_info;
         }
       }
 
@@ -718,9 +718,6 @@ function flexiform_builder_info($builder = NULL) {
 
   if (!empty($builder)) {
     return $builders[$builder];
-  }
-  else {
-    return $builders;
   }
 
   return $builders;
@@ -793,15 +790,15 @@ function flexiform_entity_getter_info($getter = NULL) {
         // Due to http://drupal.org/node/890660 we can't use module_invoke_all()
         // because we need to know the provenance of each set.
         $getters_module = module_invoke($module, 'flexiform_entity_getter_info');
-        foreach ($getters_module as $getter_name => $getter) {
-          $getter += array(
+        foreach ($getters_module as $getter_name => $getter_info) {
+          $getter_info += array(
             'params' => array(),
             'getter callback' => 'flexiform_entity_getter_' . $getter_name,
             'setter callback' => 'flexiform_entity_setter_' . $getter_name,
             'file' => $module . 'flexiform.inc',
             'module' => $module,
           );
-          $getters[$getter_name] = $getter;
+          $getters[$getter_name] = $getter_info;
         }
       }
 
@@ -814,9 +811,6 @@ function flexiform_entity_getter_info($getter = NULL) {
 
   if (!empty($getter)) {
     return $getters[$getter];
-  }
-  else {
-    return $getters;
   }
 
   return $getters;
