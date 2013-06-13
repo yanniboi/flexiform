@@ -29,6 +29,12 @@ class Flexiform extends Entity {
 
     return new $class_name($this, $base_entity);
   }
+
+  public function removeElement($element) {
+    $entity_namespace = $element->getEntityNamespace();
+    $element_name = $element->name();
+    unset($this->elements[$entity_namespace][$element_name]);
+  }
 }
 
 /**

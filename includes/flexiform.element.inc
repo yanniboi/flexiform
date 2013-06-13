@@ -135,6 +135,52 @@ class FlexiformElement implements FlexiformElementInterface {
   }
 
   /**
+   * Build the remove form for the element.
+   */
+  public function removeForm($form, &$form_state, $flexiform) {
+    $form['confirm'] = array(
+      '#type' => 'hidden',
+      '#value' => 1,
+    );
+
+    $question = t('Are you sure you want to remove @element?', array('@element' => $this->label()));
+    drupal_set_title($question, PASS_THROUGH);
+
+    $form['#attributes']['class'][] = 'confirmation';
+    $form['description'] = array('#markup' => t('This action cannot be undone.'));
+
+    $form['actions'] = array('#type' => 'actions');
+    $form['actions']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Confirm'),
+    );
+    $form['actions']['cancel'] = array(
+      '#type' => 'link',
+      '#title' => t('Cancel'),
+      '#href' => 'admin/structure/flexiforms/manage/' . $flexiform->form . '/form-fields',
+    );
+
+    $form['#theme'] = 'confirm_form';
+
+    return $form;
+  }
+
+  /**
+   * Validate the remove form for the element.
+   */
+  public function removeFormValidate($form, &$form_state, $flexiform) {}
+
+  /**
+   * Submit the remove form for the element.
+   */
+  public function removeFormSubmit($form, &$form_state, $flexiform) {
+    $flexiform->removeElement($this);
+    $flexiform->save();
+
+    $form_state['redirect'] = 'admin/structure/flexiforms/manage/' . $flexiform->form . '/form-fields';
+  }
+
+  /**
    * Get the form element.
    */
   public function form($form, &$form_state, $entity) {

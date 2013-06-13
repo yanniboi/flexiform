@@ -56,7 +56,7 @@ function flexiform_menu() {
       $items["$path/form-fields/%flexiform_formfield"] = array(
         'title' => 'Edit Field',
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('flexiform_field_configure_form', 4, 7),
+        'page arguments' => array('flexiform_field_configure_form', 4, 6),
         'file' => 'flexiform.admin.inc',
         'access arguments' => array('administer flexiforms'),
       );
@@ -64,7 +64,7 @@ function flexiform_menu() {
       $items["$path/form-fields/%flexiform_formfield/edit"] = array(
         'title' => 'Configure',
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('flexiform_field_configure_form', 4, 7),
+        'page arguments' => array('flexiform_field_configure_form', 4, 6),
         'file' => 'flexiform.admin.inc',
         'type' => MENU_DEFAULT_LOCAL_TASK,
         'access arguments' => array('administer flexiforms'),
@@ -73,7 +73,7 @@ function flexiform_menu() {
       $items["$path/form-fields/%flexiform_formfield/widget-type"] = array(
         'title' => 'Widget type',
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('flexiform_field_widget_type_form', 4, 7),
+        'page arguments' => array('flexiform_field_widget_type_form', 4, 6),
         'file' => 'flexiform.admin.inc',
         'type' => MENU_LOCAL_TASK,
         'access arguments' => array('administer flexiforms'),
@@ -82,7 +82,7 @@ function flexiform_menu() {
       $items["$path/form-fields/%flexiform_formfield/remove"] = array(
         'title' => 'Remove',
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('flexiform_field_remove_form', 4, 7),
+        'page arguments' => array('flexiform_field_remove_form', 4, 6),
         'file' => 'flexiform.admin.inc',
         'type' => MENU_LOCAL_TASK,
         'access arguments' => array('administer flexiforms'),
