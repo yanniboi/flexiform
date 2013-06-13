@@ -708,9 +708,30 @@ function flexiform_manage_form_fields_forms($form, $form_state) {
  * Configure flexiform field instance settings
  */
 function flexiform_field_configure_form($form, &$form_state, $flexiform, $element) {
-  $form['temp']['#markup'] = 'Temporary';
+  $element_namespace = FlexiformElement::makeElementNamespace($element['type'], $element['entity_namespace'], $element['element_name']);
+  $settings = $flexiform->elements[$element['entity_namespace']][$element['element_name']];
+  $element = FlexiformElement::getElement($flexiform, $element['type'], $element_namespace, $settings);
 
-  return $form;
+  $form['#flexiform'] = $flexiform;
+  $form['#flexiform_element'] = $element;
+
+  return $element->configureForm($form, $form_state, $flexiform);
+}
+
+/**
+ * Validate Callback to configure a flexiform field.
+ */
+function flexiform_field_configure_form_validate($form, &$form_state) {
+  $flexiform = $form['#flexiform'];
+  $form['#flexiform_element']->configureFormValidate($form, $form_state, $flexiform);
+}
+
+/**
+ * Submit Callback to configure a flexiform field.
+ */
+function flexiform_field_configure_form_submit($form, &$form_state) {
+  $flexiform = $form['#flexiform'];
+  $form['#flexiform_element']->configureFormSubmit($form, $form_state, $flexiform);
 }
 
 /**

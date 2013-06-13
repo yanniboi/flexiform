@@ -135,6 +135,23 @@ class FlexiformElement implements FlexiformElementInterface {
   }
 
   /**
+   * Build the configure form for the element.
+   */
+  public function configureForm($form, &$form_state, $flexiform) {
+    return $form;
+  }
+
+  /**
+   * Validate the configure form for the element.
+   */
+  public function configureFormValidate($form, &$form_state, $flexiform) {}
+
+  /**
+   * Submit the configure form for the element.
+   */
+  public function configureFormSubmit($form, &$form_state, $flexiform) {}
+
+  /**
    * Build the remove form for the element.
    */
   public function removeForm($form, &$form_state, $flexiform) {
@@ -290,7 +307,8 @@ class FlexiformElementField extends FlexiformElement{
    *   The field label.
    */
   public function label() {
-    return check_plain($this->instance['label']);
+    $instance = $this->getInstance();
+    return check_plain($instance['label']);
   }
 
   /**
@@ -347,6 +365,16 @@ class FlexiformElementField extends FlexiformElement{
       if (isset($this->instance['default_value'])) {
         $this->full_instance['default_value'] = $this->instance['default_value'];
       }
+
+      // Here we check if a default value function is used.
+      if (isset($this->instance['use_default_value_function'])) {
+        if (empty($this->instance['use_default_value_function'])) {
+          unset($this->full_instance['default_value_function']);
+        }
+        else {
+          unset($this->full_instance['default_value']);
+        }
+      }
     }
 
     return $this->full_instance;
@@ -365,6 +393,90 @@ class FlexiformElementField extends FlexiformElement{
     }
 
     return $this->full_field;
+  }
+
+  /**
+   * Overrides FlexiformElement::configureForm().
+   */
+  public function configureForm($form, &$form_state, $flexiform) {
+    form_load_include($form_state, 'inc', 'field_ui', 'field_ui.admin');
+    $instance = $this->getInstance();
+    $form = field_ui_field_edit_form($form, $form_state, $instance);
+
+    // Allow changes to the default values regardless of anything else thats going on.
+    $form['instance']['use_default_value_function'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use a Default Value Function'),
+      '#default_value' => !(field_behaviors_widget('default value', $instance) == FIELD_BEHAVIOR_DEFAULT && empty($instance['default_value_function'])),
+    );
+    $form['instance']['default_value_function'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Default Value Function'),
+      '#description' => t('If you wish to use a custom default value function, enter the name of it here. Reccommended for advanced users only.'),
+      '#default_value' => $instance['default_value_function'],
+      '#states' => array('invisible' => array(':input[name="instance[use_default_value_function]"]' => array('checked' => FALSE))),
+    );
+    $form['instance']['default_value_widget'] = field_ui_default_value_widget($this->getField(), $instance, $form, $form_state);
+    $form['instance']['default_value_widget']['#states'] = array(
+      'visible' => array(':input[name="instance[use_default_value_function]"]' => array('checked' => FALSE)),
+    );
+
+    return $form;
+  }
+
+  /**
+   * Overrides FlexiformElement::configureFormValidate().
+   */
+  public function configureFormValidate($form, &$form_state, $flexiform) {
+    if ($form_state['values']['instance']['use_default_value_function']) {
+      unset($form['instance']['default_value_widget']);
+    }
+
+    field_ui_field_edit_form_validate($form, $form_state);
+  }
+
+  /**
+   * Overrides FlexiformElement::configureFormSubmit().
+   */
+  public function configureFormSubmit($form, &$form_state, $flexiform) {
+    $instance = $form_state['values']['instance'];
+    $field = $form_state['values']['field'];
+
+    // Update any field settings that have changed.
+    $element_field = $this->getField();
+    $field = array_merge($element_field, $field);
+    $original_field = field_info_field($instance['field_name']);
+    $this->field = array_diff_assoc($field, $original_field);
+
+    // Work out element instance settings. This gets a little complicated as
+    // we want to make sure the default value settings work.
+    $element_instance = $this->getInstance();
+    $instance = array_merge($element_instance, $instance);
+    $original_instance = field_read_instance($instance['entity_type'], $instance['field_name'], $instance['bundle']);
+
+    if (!$instance['use_default_value_function']) {
+      $element = $form['instance']['default_value_widget'];
+
+      // Extract field values.
+      $items = array();
+      field_default_extract_form_values(NULL, NULL, $element_field, $element_instance, LANGUAGE_NONE, $items, $element, $form_state);
+      field_default_submit(NULL, NULL, $element_field, $element_instance, LANGUAGE_NONE, $items, $element, $form_state);
+
+      $instance['default_value'] = $items ? $items : NULL;
+    }
+    else {
+      unset($instance['default_value']);
+    }
+
+    // Cast Required to a boolean so it doesn't get erroneously stored.
+    $instance['required'] = (bool) $instance['required'];
+
+    $this->instance = array_diff_assoc($instance, $original_instance);
+
+    $flexiform->updateElement($this);
+    $flexiform->save();
+
+    $form_state['redirect'] = 'admin/structure/flexiforms/manage/' . $flexiform->form . '/form-fields';
   }
 
   /**

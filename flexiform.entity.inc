@@ -35,6 +35,12 @@ class Flexiform extends Entity {
     $element_name = $element->name();
     unset($this->elements[$entity_namespace][$element_name]);
   }
+
+  public function updateElement($element) {
+    $entity_namespace = $element->getEntityNamespace();
+    $element_name = $element->name();
+    $this->elements[$entity_namespace][$element_name] = $element->toSettingsArray();
+  }
 }
 
 /**
