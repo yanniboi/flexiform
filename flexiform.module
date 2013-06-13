@@ -904,5 +904,18 @@ function flexiform_flexiform_entity_getter_info() {
     );
   }
 
+  // Party from user Getters
+  $getters['party_from_user'] = array(
+    'label' => 'Party from User',
+    'description' => 'Load a Party Based on a User',
+    'params' => array(
+      'user' => array(
+        'entity_type' => 'user',
+      ),
+    ),
+    'entity_types' => array('party'),
+    'file' => 'party.flexiform.inc',
+  );
+
   return $getters;
 }

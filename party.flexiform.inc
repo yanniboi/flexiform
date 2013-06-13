@@ -28,3 +28,25 @@ function flexiform_entity_setter_party_data_set($flexiform, $base_entity, $entit
   $controller->attachEntity($entity);
   $controller->save();
 }
+
+/**
+ * Getter callback for party from a user.
+ */
+function flexiform_entity_getter_party_from_user($flexiform, $base_entity, $entities, $namespace, $config) {
+  $settings = $flexiform->entities[$namespace];
+
+  // Get the party entity.
+  $user = $entities[$settings['parameter']];
+  if ($user) {
+    return party_user_get_party($user);
+  }
+
+  return FALSE;
+}
+
+/**
+ * Setter callback for party from user.
+ */
+function flexiform_entity_setter_party_from_user($flexiform, $base_entity, $entity, $entity_type, $entities, $namespace, $config) {
+  entity_save($entity_type, $entity);
+}
