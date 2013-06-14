@@ -891,14 +891,27 @@ function flexiform_manage_form_entities_form($form, &$form_state, $flexiform) {
   if (!empty($entity_type)) {
     foreach (flexiform_entity_type_get_getters($entity_type) as $getter => $info) {
       if (!empty($info['params'])) {
-        $parameter = reset($info['params']);
-        $required_type = $parameter['entity_type'];
-
+        // Put the available entities into
+        $entities_by_type = array();
         foreach ($flexiform->entities as $entity_namespace => $settings) {
-          if ($settings['entity_type'] == $required_type) {
-            $key = $getter . ':' . $entity_namespace;
-            $getter_options[$key] = t('@label from @entity', array('@label' => $info['label'], '@entity' => $settings['label']));
+          $entities_by_type[$settings['entity_type']][] = $entity_namespace;
+        }
+
+        $combinations = array();
+        flexiform_get_getter_parameter_combinations($info['params'], $entities_by_type, $combinations);
+
+        foreach ($combinations as $combination) {
+          $key_bits = array($getter);
+          $label_bits = array();
+          $label = t('@label from ', array('@label' => $info['label']));
+          foreach ($combination as $param => $namespace) {
+            $key_bits[] = $param . '=' . $namespace;
+            $label_bits[] = t('!label (@param)', array('!label' => $flexiform->entities[$namespace]['label'], '@param' => $param));
           }
+          $key = implode(':', $key_bits);
+          $label .= implode(', ', $label_bits);
+
+          $getter_options[$key] = $label;
         }
       }
       else {
@@ -1001,6 +1014,30 @@ function flexiform_manage_form_entities_form($form, &$form_state, $flexiform) {
 }
 
 /**
+ * Get all combinations possible for the parameters of an entity getter.
+ */
+function flexiform_get_getter_parameter_combinations($parameters, $collated_items, &$combinations, $combination_so_far = array()) {
+  $key = key($parameters);
+  $parameter = current($parameters);
+  array_shift($parameters);
+
+  foreach ($collated_items[$parameter['entity_type']] as $item) {
+    $combination_so_far[$key] = $item;
+
+    // If this is the last parameter then save the $combination to the list.
+    if (empty($parameters)) {
+      // Check for no duplicates.
+      if (count(array_unique($combination_so_far)) == count($combination_so_far)) {
+        $combinations[] = $combination_so_far;
+      }
+    }
+    else {
+      flexiform_get_getter_parameter_combinations($parameters, $collated_items, $combinations, $combination_so_far);
+    }
+  }
+}
+
+/**
  * Ajax callback to update the bundles available
  */
 function flexiform_manage_form_entities_bundles($form, $form_state) {
@@ -1079,8 +1116,11 @@ function flexiform_manage_form_entities_form_submit($form, &$form_state) {
 
     $input = explode(':', $values['getter']);
     if (count($input) > 1) {
-      $entity['getter'] = $input[0];
-      $entity['parameter'] = $input[1];
+      $entity['getter'] = array_shift($input);
+      foreach ($input as $param_info) {
+        $bits = explode('=', $param_info);
+        $entity['parameters'][$bits[0]] = $bits[1];
+      }
     }
 
     $flexiform->entities[$entity['namespace']] = $entity;
