@@ -156,6 +156,14 @@ class FlexiformElement implements FlexiformElementInterface {
       '#default_value' => !empty($this->settings['display_options']['hide_label']),
     );
 
+    $form['display_options']['hide_element'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Hide the Element'),
+      '#description' => t('Completely hide the element from the form. If hidden an element will pass through its default values.'),
+      '#access' => FALSE,
+      '#default_value' => !empty($this->settings['display_options']['hide_element']),
+    );
+
     return $form;
   }
 
@@ -168,12 +176,10 @@ class FlexiformElement implements FlexiformElementInterface {
    * Submit the configure form for the element.
    */
   public function configureFormSubmit($form, &$form_state, $flexiform) {
-    dpm($form_state);
     $this->settings['display_options']['css'] = $form_state['values']['display_options']['css_classes'];
     $this->settings['display_options']['hide_label'] = $form_state['values']['display_options']['hide_label'];
+    $this->settings['display_options']['hide_element'] = $form_state['values']['display_options']['hide_element'];
 
-    dpm($this->settings);
-    dpm($this->toSettingsArray());
     $flexiform->updateElement($this);
     $flexiform->save();
 
@@ -235,6 +241,11 @@ class FlexiformElement implements FlexiformElementInterface {
     if (!empty($form[$this->element_namespace]['#title'])
       && !empty($this->settings['display_options']['hide_title'])) {
       $form[$this->element_namespace]['#title'] = FALSE;
+    }
+
+    if (!empty($form[$this->element_namespace]['#type'])
+      && !empty($this->settings['display_options']['hide_element'])) {
+      $form[$this->element_namespace]['#access'] = FALSE;
     }
 
     if (!empty($this->settings['display_options']['css'])) {
