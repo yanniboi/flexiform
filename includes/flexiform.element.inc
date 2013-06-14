@@ -138,6 +138,24 @@ class FlexiformElement implements FlexiformElementInterface {
    * Build the configure form for the element.
    */
   public function configureForm($form, &$form_state, $flexiform) {
+    $form['display_options'] = array(
+      '#tree' => TRUE,
+      '#type' => 'fieldset',
+      '#title' => t('Display Options'),
+    );
+
+    $form['display_options']['css_classes'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Additional CSS Classes'),
+      '#default_value' => !empty($this->settings['display_options']['css']) ? $this->settings['display_options']['css'] : '',
+    );
+
+    $form['display_options']['hide_label'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Hide the Element Label'),
+      '#default_value' => !empty($this->settings['display_options']['hide_label']),
+    );
+
     return $form;
   }
 
@@ -149,7 +167,18 @@ class FlexiformElement implements FlexiformElementInterface {
   /**
    * Submit the configure form for the element.
    */
-  public function configureFormSubmit($form, &$form_state, $flexiform) {}
+  public function configureFormSubmit($form, &$form_state, $flexiform) {
+    dpm($form_state);
+    $this->settings['display_options']['css'] = $form_state['values']['display_options']['css_classes'];
+    $this->settings['display_options']['hide_label'] = $form_state['values']['display_options']['hide_label'];
+
+    dpm($this->settings);
+    dpm($this->toSettingsArray());
+    $flexiform->updateElement($this);
+    $flexiform->save();
+
+    $form_state['redirect'] = 'admin/structure/flexiforms/manage/' . $flexiform->form . '/form-fields';
+  }
 
   /**
    * Build the remove form for the element.
@@ -201,9 +230,18 @@ class FlexiformElement implements FlexiformElementInterface {
    * Get the form element.
    */
   public function form($form, &$form_state, $entity) {
-    $form[$this->element_namespace] = array(
-      '#weight' => $this->getWeight(),
-    );
+    $form[$this->element_namespace]['#weight'] = $this->getWeight();
+
+    if (!empty($form[$this->element_namespace]['#title'])
+      && !empty($this->settings['display_options']['hide_title'])) {
+      $form[$this->element_namespace]['#title'] = FALSE;
+    }
+
+    if (!empty($this->settings['display_options']['css'])) {
+      foreach (explode(' ', $this->settings['display_options']['css']) as $class) {
+        $form[$this->element_namespace]['#attributes']['class'][] = $class;
+      }
+    }
 
     return $form;
   }
@@ -216,6 +254,7 @@ class FlexiformElement implements FlexiformElementInterface {
       'type' => '',
       'entity_namespace' => $this->entity_namespace,
       'weight' => $this->weight,
+      'display_options' => $this->settings['display_options'],
     );
 
     return $settings;
@@ -421,6 +460,8 @@ class FlexiformElementField extends FlexiformElement{
       'visible' => array(':input[name="instance[use_default_value_function]"]' => array('checked' => FALSE)),
     );
 
+    $form = parent::configureForm($form, $form_state, $flexiform);
+
     return $form;
   }
 
@@ -473,18 +514,13 @@ class FlexiformElementField extends FlexiformElement{
 
     $this->instance = array_diff_assoc($instance, $original_instance);
 
-    $flexiform->updateElement($this);
-    $flexiform->save();
-
-    $form_state['redirect'] = 'admin/structure/flexiforms/manage/' . $flexiform->form . '/form-fields';
+    parent::configureFormSubmit($form, $form_state, $flexiform);
   }
 
   /**
    * Return the form element for this FlexiformElement.
    */
   public function form($form, &$form_state, $entity, $language = LANGUAGE_NONE) {
-    $form = parent::form($form, $form_state, $entity);
-
     $items = field_get_items($this->entity_type, $entity, $this->field_name, $language);
 
     if (!field_info_field($this->field_name)
@@ -515,10 +551,15 @@ class FlexiformElementField extends FlexiformElement{
         }
       }
 
+      // Honour the hide title settings.
+      if (!empty($this->settings['display_options']['hide_title'])) {
+        $form_field[LANGUAGE_NONE]['#title'] = FALSE;
+      }
+
       $form[$this->element_namespace] = $form_field;
-      $form[$this->element_namespace]['#weight'] = $this->getWeight();
     }
 
+    $form = parent::form($form, $form_state, $entity);
     return $form;
   }
 
