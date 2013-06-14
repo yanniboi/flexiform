@@ -72,3 +72,38 @@ function hook_flexiform_submission_access($op, $flexiform_submission, $account) 
 
   // All other access checks will be unaffected by this implementation.
 }
+
+/**
+ * Alter a flexiform as it gets built.
+ *
+ * @param array $form
+ *   The form array that has been built by the flexiform builder.
+ * @param array $form_state
+ *   The form_state of the form.
+ * @param Flexiform $flexiform
+ *   The flexiform object.
+ *
+ * @see FlexiformBuilder::invoke()
+ * @see FlexiformBuilderFlexiform::form()
+ */
+function hook_flexiform_build_alter(&$form, &$form_state, $flexiform) {
+  
+}
+
+/**
+ * Alter a flexiform as it gets built by a particular builder.
+ *
+ * @param array $form
+ *   The form array that has been built by the flexiform builder.
+ * @param array $form_state
+ *   The form_state of the form.
+ * @param Flexiform $flexiform
+ *   The flexiform object.
+ *
+ * @see FlexiformBuilder::invoke()
+ * @see FlexiformBuilderFlexiform::form()
+ * @see flexiform_get_builder_info()
+ */
+function hook_flexiform_build_FLEXIFORM_BUILDER_alter(&$form, &$form_state, $flexiform) {
+  
+}

@@ -74,6 +74,18 @@ class FlexiformBuilder implements FlexiformBuilderInterface {
    * Submit the form.
    */
   public function formSubmit($form, &$form_state) {}
+
+  /**
+   * Invoke hooks to alter the build of this form.
+   */
+  public function invoke(&$form, &$form_state) {
+    $hooks = array(
+      'flexiform_build',
+      'flexiform_build_' . $this->flexiform->builder,
+    );
+
+    drupal_alter($hooks, $form, $form_state, $this->flexiform);
+  }
 }
 
 /**
@@ -99,6 +111,8 @@ class FlexiformBuilderFlexiform extends FlexiformBuilder {
 
       flexiform_embed_entity_elements($namespace, $this->flexiform, $entity, $elements, $form, $form_state);
     }
+
+    $this->invoke($form, $form_state);
 
     return $form;
   }
@@ -170,6 +184,8 @@ class FlexiformBuilderEntityForm extends FlexiformBuilder {
     $form = parent::form($form, &$form_state);
     $form['#tree'] = TRUE;
     field_attach_form($this->base_entity_type, $this->base_entity, $form, $form_state);
+
+    $this->invoke($form, $form_state);
 
     return $form;
   }
