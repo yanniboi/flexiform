@@ -78,11 +78,19 @@ class FlexiformBuilder implements FlexiformBuilderInterface {
   /**
    * Invoke hooks to alter the build of this form.
    */
-  public function invoke(&$form, &$form_state) {
-    $hooks = array(
-      'flexiform_build',
-      'flexiform_build_' . $this->flexiform->builder,
-    );
+  public function invoke(&$form, &$form_state, $hook = '') {
+    if (!empty($hook)){
+      $hooks = array(
+        'flexiform_build_' . $hook,
+        'flexiform_build_' . $this->flexiform->builder . '_' . $hook,
+      );
+    }
+    else {
+      $hooks = array(
+        'flexiform_build',
+        'flexiform_build_' . $this->flexiform->builder,
+      );
+    }
 
     drupal_alter($hooks, $form, $form_state, $this->flexiform);
   }
@@ -130,6 +138,8 @@ class FlexiformBuilderFlexiform extends FlexiformBuilder {
       $entity = $form['#flexiform_entities'][$element->getEntityNamespace()];
       $element->formValidate($form, $form_state, $entity);
     }
+
+    $this->invoke($form, $form_state, 'validate');
   }
 
   /**
@@ -147,6 +157,8 @@ class FlexiformBuilderFlexiform extends FlexiformBuilder {
       $entity = $form['#flexiform_entities'][$element->getEntityNamespace()];
       $element->formSubmit($form, $form_state, $entity);
     }
+
+    $this->invoke($form, $form_state, 'submit');
 
     foreach ($flexiform->entities as $entity_namespace => $settings) {
       if (isset($settings['getter'])) {
@@ -195,6 +207,7 @@ class FlexiformBuilderEntityForm extends FlexiformBuilder {
    */
   public function formValidate($form, &$form_state) {
     field_attach_form_validate($this->base_entity_type, $this->base_entity, $form, $form_state);
+    $this->invoke($form, $form_state, 'validate');
   }
 
   /**
@@ -202,6 +215,8 @@ class FlexiformBuilderEntityForm extends FlexiformBuilder {
    */
   public function formSubmit($form, &$form_state) {
     field_attach_submit($this->base_entity_type, $this->base_entity, $form, $form_state);
+    $this->invoke($form, $form_state, 'submit');
+
     entity_save($this->base_entity_type, $this->base_entity);
 
     if (module_exists('rules')) {
