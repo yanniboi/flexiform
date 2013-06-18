@@ -160,7 +160,6 @@ class FlexiformElement implements FlexiformElementInterface {
       '#type' => 'checkbox',
       '#title' => t('Hide the Element'),
       '#description' => t('Completely hide the element from the form. If hidden an element will pass through its default values.'),
-      '#access' => FALSE,
       '#default_value' => !empty($this->settings['display_options']['hide_element']),
     );
 
@@ -239,7 +238,7 @@ class FlexiformElement implements FlexiformElementInterface {
     $form[$this->element_namespace]['#weight'] = $this->getWeight();
 
     if (!empty($form[$this->element_namespace]['#title'])
-      && !empty($this->settings['display_options']['hide_title'])) {
+      && !empty($this->settings['display_options']['hide_label'])) {
       $form[$this->element_namespace]['#title'] = FALSE;
     }
 
@@ -563,7 +562,7 @@ class FlexiformElementField extends FlexiformElement{
       }
 
       // Honour the hide title settings.
-      if (!empty($this->settings['display_options']['hide_title'])) {
+      if (!empty($this->settings['display_options']['hide_label'])) {
         $form_field[LANGUAGE_NONE]['#title'] = FALSE;
       }
 
