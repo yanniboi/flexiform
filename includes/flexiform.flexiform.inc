@@ -74,6 +74,13 @@ function flexiform_wrapper($flexiform, $base_entity) {
 function flexiform($form, &$form_state, $flexiform, $base_entity) {
   global $user;
 
+  // Consider moving all of these functions into .module easier accessibility.
+  $form_state['build_info']['files']["flexiform:includes/flexiform.flexiform.inc"] = array(
+    'type' => 'inc',
+    'module' => 'flexiform',
+    'name' => 'includes/flexiform.flexiform',
+  );
+
   $form['#flexiform_builder'] = $builder = $flexiform->getBuilder($base_entity);
   $form = $builder->form($form, $form_state);
 
@@ -138,6 +145,11 @@ function flexiform_embed_entity_elements($entity_namespace, $flexiform, $entity,
     $form['#parents'] = array();
   }
 
+  // All the fields for this entity need to end up with the correct parents
+  // so set the #parents here to be the entity namespace and unset it after the
+  // loop.
+  array_push($form['#parents'], $entity_namespace);
+
   // Iterate over the fields
   foreach ($elements as $element_name => $settings) {
     $element_namespace = FlexiformElement::makeElementNamespace($settings['type'], $entity_namespace, $element_name);
@@ -145,6 +157,8 @@ function flexiform_embed_entity_elements($entity_namespace, $flexiform, $entity,
 
     $form += $element->form($form, $form_state, $entity);
   }
+
+  array_pop($form['#parents']);
 }
 
 /**
