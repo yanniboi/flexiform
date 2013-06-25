@@ -105,7 +105,7 @@ class FlexiformBuilderFlexiform extends FlexiformBuilder {
    * Build the form for this flexiform.
    */
   public function form($form, &$form_state) {
-    $form = parent::form($form, &$form_state);
+    $form = parent::form($form, $form_state);
 
     $form['#flexiform_entities'] = flexiform_prepare_entities($this->flexiform, $this->base_entity);
 
@@ -193,7 +193,7 @@ class FlexiformBuilderEntityForm extends FlexiformBuilder {
    * Attach all fields for this entity to the form.
    */
   public function form($form, &$form_state) {
-    $form = parent::form($form, &$form_state);
+    $form = parent::form($form, $form_state);
     $form['#tree'] = TRUE;
     field_attach_form($this->base_entity_type, $this->base_entity, $form, $form_state);
 
