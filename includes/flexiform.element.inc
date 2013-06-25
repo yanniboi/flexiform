@@ -66,6 +66,7 @@ class FlexiformElement implements FlexiformElementInterface {
    *     - 'entity_type' - The entity type of the entity for this element.
    */
   public function __construct($flexiform, $namespace, $settings = array()) {
+    $this->flexiform = $flexiform;
     $this->element_namespace = $namespace;
     $this->settings = $settings;
 
@@ -239,7 +240,7 @@ class FlexiformElement implements FlexiformElementInterface {
 
     if (!empty($form[$this->element_namespace]['#title'])
       && !empty($this->settings['display_options']['hide_label'])) {
-      $form[$this->element_namespace]['#title'] = FALSE;
+      $form[$this->element_namespace]['#title_display'] = 'invisible';
     }
 
     if (!empty($form[$this->element_namespace]['#type'])
@@ -255,6 +256,22 @@ class FlexiformElement implements FlexiformElementInterface {
 
     return $form;
   }
+
+  /**
+   * Extract the submitted values for this form element.
+   */
+  public function formExtractValues($form, &$form_state, $entity) {
+    return array();
+  }
+
+  /**
+   * Work out if the submitted value constitutes empty.
+   */
+  public function formIsEmpty($form, &$form_state, $entity) {
+    $values = $this->formExtractValues($form, $form_state, $entity);
+    return !empty($values);
+  }
+
 
   /**
    * Convert this object into a settings array.
@@ -452,6 +469,12 @@ class FlexiformElementField extends FlexiformElement{
     $instance = $this->getInstance();
     $form = field_ui_field_edit_form($form, $form_state, $instance);
 
+    // Invoke hook_form_alter() and hook_form_field_ui_field_edit_form_alter()
+    /*$hooks = array('form');
+    $hooks[] = 'form_field_ui_field_edit_form';
+    $fake_form_id = 'field_ui_field_edit_form';
+    drupal_alter($hooks, $form, $form_state, $fake_form_id);*/
+
     // Allow changes to the default values regardless of anything else thats going on.
     $form['instance']['use_default_value_function'] = array(
       '#type' => 'checkbox',
@@ -542,8 +565,10 @@ class FlexiformElementField extends FlexiformElement{
     $instance = $this->getInstance();
     $form_fields = field_default_form($this->entity_type, $entity, $this->getField(), $instance, $language, $items, $form, $form_state);
     foreach ($form_fields as $form_key => $form_field) {
+      // Make sure the parents stuff is always correct.
       $form_field['#parents'] = $form['#parents'];
-      array_push($form_field['#parents'], $this->entity_namespace, $this->field_name);
+      array_push($form_field['#parents'], $this->field_name);
+
       $form_field['#flexiform'] = $this->flexiform;
       $form_field['#flexiform_element'] = $this;
 
@@ -563,7 +588,7 @@ class FlexiformElementField extends FlexiformElement{
 
       // Honour the hide title settings.
       if (!empty($this->settings['display_options']['hide_label'])) {
-        $form_field[LANGUAGE_NONE]['#title'] = FALSE;
+        $form_field[LANGUAGE_NONE]['#title_display'] = 'invisible';
       }
 
       $form[$this->element_namespace] = $form_field;
@@ -636,6 +661,30 @@ class FlexiformElementField extends FlexiformElement{
     if ($items !== array() || isset($entity->{$this->field_name}[$language])) {
       $entity->{$this->field_name}[$language] = $items;
     }
+  }
+
+  /**
+   * Overrides FlexiformElement::formIsEmpty().
+   */
+  function formIsEmpty($form, &$form_state, $entity, $language = LANGUAGE_NONE) {
+    $items = $this->formExtractValues($form, $form_state, $entity, $language);
+    $items = _field_filter_items($this->getField(), $items);
+
+    if (empty($items)) {
+      return TRUE;
+    }
+  }
+
+  /**
+   * Overrides FlexiformElement::formExtractValues().
+   */
+  function formExtractValues($form, &$form_state, $entity, $language = LANGUAGE_NONE) {
+    // Extract form values.
+    $form_elements = $this->extractFormElements($form);
+    $items = array();
+    field_default_extract_form_values($this->getEntityType(), $entity, $this->getField(), $this->getInstance(), $language, $items, $form_elements, $form_state);
+
+    return $items;
   }
 
   /**
@@ -731,7 +780,7 @@ class FlexiformElementFlexiform extends FlexiformElement {
     $form[$this->element_namespace]['#flexiform_builder'] = $builder;
     $form[$this->element_namespace]['#flexiform_element'] = $this;
     $form[$this->element_namespace]['#type'] = 'fieldset';
-    $form[$this->element_namespace]['#title'] = $this->label;
+    $form[$this->element_namespace]['#title'] = $this->label();
     $form[$this->element_namespace] += $builder->form($sub_form, $form_state, $entity); //flexiform($sub_form, $form_state, $this->getFlexiform(), $entity, FALSE);
 
     return $form;
