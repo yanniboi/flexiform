@@ -26,7 +26,7 @@ function flexiform_entity_setter_party_data_set($flexiform, $base_entity, $entit
   $party = $entities[$settings['parameters']['party']];
   $controller = party_get_crm_controller($party, $config['data_set_name']);
   $controller->attachEntity($entity);
-  $controller->save();
+  $controller->save(TRUE);
 }
 
 /**
