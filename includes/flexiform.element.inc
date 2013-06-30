@@ -635,13 +635,13 @@ class FlexiformElementField extends FlexiformElement{
     // flagging.
     foreach ($errors as $field_name => $field_errors) {
       foreach ($field_errors as $langcode => $errors) {
-        $field_state = field_form_get_state($form['#parents'], $field_name, $language, $form_state);
+        $field_state = field_form_get_state($form_elements['#parents'], $field_name, $language, $form_state);
         $field_state['errors'] = $errors;
-        field_form_set_state($form['#parents'], $field_name, $language, $form_state, $field_state);
+        field_form_set_state($form_elements['#parents'], $field_name, $language, $form_state, $field_state);
       }
     }
 
-    field_default_form_errors($this->getEntityType(), $entity, $field, $this->getInstance(), $language, $items, $form, $form_state);
+    field_default_form_errors($this->getEntityType(), $entity, $field, $this->getInstance(), $language, $items, $form_elements, $form_state);
   }
 
   /**
