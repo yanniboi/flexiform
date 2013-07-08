@@ -874,48 +874,53 @@ function flexiform_flexiform_entity_getter_info() {
   );
 
   // Profile2 Getters
-  $getters['profile2_profile_from_user'] = array(
-    'label' => 'Profile2 from User',
-    'description' => 'Load a Profile 2 Basede on a User',
-    'params' => array(
-      'user' => array(
-        'entity_type' => 'user',
-      ),
-    ),
-    'entity_types' => array('profile2'),
-    'file' => 'profile2.flexiform.inc',
-  );
-
-  // Getters for data sets.
-  foreach (party_get_data_set_info() as $data_set_name => $info) {
-    $getters[$data_set_name . '_from_party'] = array(
-      'label' => t('@label data set', array('@label' => $info['label'])),
-      'description' => t('Load a data set from a party.'),
-      'data_set_name' => $data_set_name,
-      'getter callback' => 'flexiform_entity_getter_party_data_set',
-      'setter callback' => 'flexiform_entity_setter_party_data_set',
+  if (module_exists('profile2')) {
+    $getters['profile2_profile_from_user'] = array(
+      'label' => 'Profile2 from User',
+      'description' => 'Load a Profile 2 Basede on a User',
       'params' => array(
-        'party' => array(
-          'entity_type' => 'party',
+        'user' => array(
+          'entity_type' => 'user',
         ),
       ),
-      'entity_types' => array($info['entity type']),
-      'file' => 'party.flexiform.inc',
+      'entity_types' => array('profile2'),
+      'file' => 'profile2.flexiform.inc',
     );
   }
 
-  // Party from user Getters
-  $getters['party_from_user'] = array(
-    'label' => 'Party from User',
-    'description' => 'Load a Party Based on a User',
-    'params' => array(
-      'user' => array(
-        'entity_type' => 'user',
+  // Party Getters.
+  if (module_exists('party')) {
+    // Getters for data sets.
+    foreach (party_get_data_set_info() as $data_set_name => $info) {
+      $getters[$data_set_name . '_from_party'] = array(
+        'label' => t('@label data set', array('@label' => $info['label'])),
+        'description' => t('Load a data set from a party.'),
+        'data_set_name' => $data_set_name,
+        'getter callback' => 'flexiform_entity_getter_party_data_set',
+        'setter callback' => 'flexiform_entity_setter_party_data_set',
+        'params' => array(
+          'party' => array(
+            'entity_type' => 'party',
+          ),
+        ),
+        'entity_types' => array($info['entity type']),
+        'file' => 'party.flexiform.inc',
+      );
+    }
+
+    // Party from user Getters
+    $getters['party_from_user'] = array(
+      'label' => 'Party from User',
+      'description' => 'Load a Party Based on a User',
+      'params' => array(
+        'user' => array(
+          'entity_type' => 'user',
+        ),
       ),
-    ),
-    'entity_types' => array('party'),
-    'file' => 'party.flexiform.inc',
-  );
+      'entity_types' => array('party'),
+      'file' => 'party.flexiform.inc',
+    );
+  }
 
   return $getters;
 }
