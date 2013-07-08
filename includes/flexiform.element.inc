@@ -558,8 +558,8 @@ class FlexiformElementField extends FlexiformElement{
 
     if (!field_info_field($this->field_name)
       || !field_info_instance($this->entity_type, $this->field_name, $this->bundle)) {
-      drupal_set_message("Error in " . __CLASS__ . "::" . __METHOD__ .": Field <em>{$this->field_name}</em> does not exist or does not have an instance on {$this->entity_type}:{$this->bundle}.", "error");
-      return FALSE;
+      debug("Error in " . __CLASS__ . "::" . __METHOD__ .": Field <em>{$this->field_name}</em> does not exist or does not have an instance on {$this->entity_type}:{$this->bundle}.", "error");
+      return $form;
     }
 
     $instance = $this->getInstance();
