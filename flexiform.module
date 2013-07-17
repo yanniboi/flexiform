@@ -11,6 +11,8 @@
 function flexiform_hook_info() {
   $hooks['flexiform_group_info'] = array('group' => 'flexiform');
   $hooks['flexiform_submission_access'] = array('group' => 'flexiform');
+  $hooks['default_flexiform'] = array('group' => 'flexiform_default');
+  $hooks['default_flexiform_alter'] = array('group' => 'flexiform_default');
   return $hooks;
 }
 
