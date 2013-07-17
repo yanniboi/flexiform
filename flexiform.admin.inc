@@ -11,12 +11,183 @@
 class FlexiformUIController extends EntityDefaultUIController {
 
   /**
+   * Overrides operationCount();
+   */
+  protected function operationCount() {
+    $count = 6;
+    $count += !empty($this->entityInfo['i18n controller class']) ? 1 : 0;
+    return $count;
+  }
+
+  /**
+   * Overrides overviewTableHeaders();
+   */
+  protected function overviewTableHeaders($conditions, $rows, $additional_header = array()) {
+    $additional_header = array(
+      t('Base Entity'),
+      t('Bundle'),
+    );
+    return parent::overviewTableHeaders($conditions, $rows, $additional_header);
+  }
+
+  /**
+   * Overrides overviewTableRow();
+   */
+  protected function overviewTableRow($conditions, $id, $entity, $additional_cols = array()) {
+    $row = array();
+    // Take the first column as usual.
+    $row[] = array(
+      'data' => array(
+        '#theme' => 'entity_ui_overview_item',
+        '#label' => entity_label($this->entityType, $entity),
+        '#name' => !empty($this->entityInfo['exportable']) ? entity_id($this->entityType, $entity) : FALSE,
+        '#url' => FALSE,
+        '#entity_type' => $this->entityType,
+      ),
+    );
+
+    // Add the base entity.
+    $base_info = entity_get_info($entity->base_entity);
+    $row[] = $base_info['label'];
+    $row[] = $base_info['bundles'][$entity->base_entity_bundle]['label'];
+
+    // Add in any passed additional cols.
+    foreach ($additional_cols as $col) {
+      $row[] = $col;
+    }
+
+    $row[] = array('data' => array(
+      '#theme' => 'entity_status',
+      '#status' => $entity->{$this->statusKey},
+    ));
+
+    $i18n = !empty($this->entityInfo['i18n controller class']);
+
+    // Add operations depending on the status.
+    if (entity_has_status($this->entityType, $entity, ENTITY_FIXED)) {
+      $row[] = array(
+        'data' => l(t('clone'), $this->path . '/manage/' . $id . '/clone'),
+        'colspan' => $this->operationCount(),
+      );
+    }
+    else {
+      $row[] = l(t('edit'), $this->path . '/manage/' . $id);
+      $row[] = l(t('manage form fields'), $this->path . '/manage/' . $id . '/form-fields');
+      $row[] = l(t('manage form entities'), $this->path . '/manage/' . $id . '/form-entities');
+
+      if ($i18n) {
+        $row[] = l(t('translate'), $this->path . '/manage/' . $id . '/translate');
+      }
+      $row[] = l(t('clone'), $this->path . '/manage/' . $id . '/clone');
+
+      if (empty($this->entityInfo['exportable']) || !entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
+        $row[] = l(t('delete'), $this->path . '/manage/' . $id . '/delete', array('query' => drupal_get_destination()));
+      }
+      elseif (entity_has_status($this->entityType, $entity, ENTITY_OVERRIDDEN)) {
+        $row[] = l(t('revert'), $this->path . '/manage/' . $id . '/revert', array('query' => drupal_get_destination()));
+      }
+      else {
+        $row[] = '';
+      }
+    }
+    $row[] = l(t('export'), $this->path . '/manage/' . $id . '/export');
+
+    return $row;
+  }
+
+  /**
    * Overrides hook_menu() defaults.
    */
   public function hook_menu() {
     $items = parent::hook_menu();
-		$items[$this->path]['description'] = 'Manage flexiforms, including adding
+    $items[$this->path]['description'] = 'Manage flexiforms, including adding
 		and removing fields and the display of fields.';
+
+    $wildcard = '%flexiform';
+
+    $items["{$this->path}/manage/{$wildcard}/form-fields"] = array(
+      'title' => 'Manage form fields',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('flexiform_manage_form_fields_form', 4),
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 2,
+      'file' => 'flexiform.admin.inc',
+      'file path' => drupal_get_path('module', 'flexiform'),
+      'access arguments' => array('administer flexiforms'),
+    );
+
+    $items["{$this->path}/manage/{$wildcard}/form-fields/%flexiform_formfield"] = array(
+      'title' => 'Edit Field',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('flexiform_field_configure_form', 4, 6),
+      'file' => 'flexiform.admin.inc',
+      'file path' => drupal_get_path('module', 'flexiform'),
+      'access arguments' => array('administer flexiforms'),
+    );
+
+    $items["{$this->path}/manage/{$wildcard}/form-fields/%flexiform_formfield/edit"] = array(
+      'title' => 'Configure',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('flexiform_field_configure_form', 4, 6),
+      'file' => 'flexiform.admin.inc',
+      'file path' => drupal_get_path('module', 'flexiform'),
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'access arguments' => array('administer flexiforms'),
+    );
+
+    $items["{$this->path}/manage/{$wildcard}/form-fields/%flexiform_formfield/widget-type"] = array(
+      'title' => 'Widget type',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('flexiform_field_widget_type_form', 4, 6),
+      'file' => 'flexiform.admin.inc',
+      'file path' => drupal_get_path('module', 'flexiform'),
+      'type' => MENU_LOCAL_TASK,
+      'access arguments' => array('administer flexiforms'),
+    );
+
+    $items["{$this->path}/manage/{$wildcard}/form-fields/%flexiform_formfield/remove"] = array(
+      'title' => 'Remove',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('flexiform_field_remove_form', 4, 6),
+      'file' => 'flexiform.admin.inc',
+      'file path' => drupal_get_path('module', 'flexiform'),
+      'type' => MENU_LOCAL_TASK,
+      'access arguments' => array('administer flexiforms'),
+    );
+
+    $items["{$this->path}/manage/{$wildcard}/form-entities"] = array(
+      'title' => 'Manage form entities',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('flexiform_manage_form_entities_form', 4),
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 3,
+      'file' => 'flexiform.admin.inc',
+      'file path' => drupal_get_path('module', 'flexiform'),
+      'access arguments' => array('administer flexiforms'),
+    );
+
+    $items["{$this->path}/manage/{$wildcard}/form-entities/%/remove"] = array(
+      'title' => 'Remove',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('flexiform_entity_remove_form', 4, 7),
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 3,
+      'file' => 'flexiform.admin.inc',
+      'file path' => drupal_get_path('module', 'flexiform'),
+      'access arguments' => array('administer flexiforms'),
+    );
+
+    if (module_exists('rules_admin')) {
+      $items["{$this->path}/manage/{$wildcard}/rules/add-action"] = array(
+        'title' => 'Add Action',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('rules_admin_add_reaction_rule', $bundle_info['admin']['real path']),
+        'access callback' => TRUE,
+        'file' => 'rules_admin.inc',
+        'file path' => drupal_get_path('module', 'rules_admin'),
+      );
+    }
+
     return $items;
   }
 }
@@ -1056,42 +1227,6 @@ function flexiform_field_element_options($flexiform, $entity_namespace = NULL) {
   $options = array();
   foreach ($elements as $name => $element) {
     $options[$element['group']][$name] = $element['label'];
-  }
-
-  return $options;
-}
-
-/**
- * Get all available fields for a given entity
- */
-function flexiform_field_field_options($flexiform, $entity_namespace = NULL) {
-  if (!isset($entity_namespace) || !isset($flexiform->entities[$entity_namespace])) {
-    return array();
-  }
-
-  $entity_info = $flexiform->entities[$entity_namespace];
-  $instances = field_info_instances($entity_info['entity_type'], $entity_info['bundle']);
-  $options = array();
-  foreach ($instances as $instance) {
-    $options[$instance['field_name']] = $instance['label'];
-  }
-
-  return $options;
-}
-
-/**
- * Get all available forms for a given entity.
- */
-function flexiform_field_form_options($flexiform, $entity_namespace = NULL) {
-  if (!isset($entity_namespace) || !isset($flexiform->entities[$entity_namespace])) {
-    return array();
-  }
-
-  $entity_info = $flexiform->entities[$entity_namespace];
-  $forms = flexiform_get_base_entity_forms($entity_info['entity_type'], $entity_info['bundle']);
-  $options = array();
-  foreach ($forms as $form) {
-    $options[$form->form] = $form->label;
   }
 
   return $options;
