@@ -315,10 +315,12 @@ function flexiform_update_7007() {
   }
 
   // Update the base entities on these flexiforms.
-  db_update('flexiform')
-    ->fields(array('base_entity' => 'flexiform_webform_submission'))
-    ->condition('form', array_keys($webforms))
-    ->execute();
+  if (!empty($webforms)) {
+    db_update('flexiform')
+      ->fields(array('base_entity' => 'flexiform_webform_submission'))
+      ->condition('form', array_keys($webforms))
+      ->execute();
+  }
 
   // Migrate existing submissions to the new entity tables.
   $query = db_select('flexiform_submission', 'f');
