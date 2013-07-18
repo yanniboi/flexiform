@@ -6,11 +6,11 @@
  * as fields.
  */
 
-class flexiform_submission_handler_link_field extends views_handler_field {
+class flexiform_webform_submission_handler_link_field extends views_handler_field {
   function construct() {
     parent::construct();
 
-    $this->additional_fields['flexiform_submission_id'] = 'flexiform_submission_id';
+    $this->additional_fields['flexiform_webform_submission_id'] = 'flexiform_webform_submission_id';
     $this->additional_fields['form'] = 'form';
   }
 
@@ -39,8 +39,8 @@ class flexiform_submission_handler_link_field extends views_handler_field {
 
   function render($values) {
     $text = !empty($this->options['text']) ? $this->options['text'] : t('view');
-    $flexiform_submission_id = $values->{$this->aliases['flexiform_submission_id']};
+    $flexiform_webform_submission_id = $values->{$this->aliases['flexiform_webform_submission_id']};
 
-    return l($text, 'flexiform_submission/' . $flexiform_submission_id);
+    return l($text, 'flexiform_webform_submission/' . $flexiform_webform_submission_id);
   }
 }

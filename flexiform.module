@@ -1,8 +1,7 @@
 <?php
 /**
  * @file
- * Module for the FlexiformSubmission Entity - a starting point to create your own Entity
- * and associated administration interface
+ * Module for the Flexiform system.
  */
 
 /**
@@ -24,14 +23,6 @@ function flexiform_hook_info() {
  */
 function flexiform_menu() {
   $items = array();
-
-  $items['flexiform_submission/%flexiform_submission'] = array(
-    'title' => 'View submission',
-    'page callback' => 'flexiform_submission_page_view',
-    'page arguments' => array(1),
-    'access callback' => 'flexiform_submission_access',
-    'access arguments' => array('view', 1),
-  );
 
   // Get Flexiform Pages
   $query = db_select('flexiform', 'f');
@@ -87,38 +78,6 @@ function flexiform_menu() {
  * choice.
  */
 function flexiform_entity_info() {
-  $return['flexiform_submission'] = array(
-    'label' => t('Flexiform Submission'),
-    // The entity class and controller class extend the classes provided by the
-    // Entity API
-    'entity class' => 'FlexiformSubmission',
-    'controller class' => 'FlexiformSubmissionController',
-    'base table' => 'flexiform_submission',
-    'fieldable' => TRUE,
-    'entity keys' => array(
-        'id' => 'flexiform_submission_id',
-        'bundle' => 'form',
-    ),
-    // Bundles are defined by the flexiforms below
-    'bundles' => array(),
-    // Bundle keys tell the FieldAPI how to extract information from the bundle objects
-    'bundle keys' => array(
-      'bundle' => 'form',
-    ),
-    'label callback' => 'entity_class_label',
-    'uri callback' => 'entity_class_uri',
-    'creation callback' => 'flexiform_submission_create',
-    'access callback' => 'flexiform_submission_access',
-    'module' => 'flexiform',
-    // The information below is used by the FlexiformSubmissionUIController (which extends the EntityDefaultUIController)
-    'admin ui' => array(
-      'path' => 'admin/content/flexiform_submissions',
-      'file' => 'flexiform_submission.admin.inc',
-      'controller class' => 'FlexiformSubmissionUIController',
-      'menu wildcard' => '%flexiform_submission',
-    ),
-  );
-
   // The entity that holds information about the entity types
   $return['flexiform'] = array(
     'label' => t('Flexible Form'),
@@ -126,7 +85,6 @@ function flexiform_entity_info() {
     'controller class' => 'FlexiformController',
     'base table' => 'flexiform',
     'fieldable' => FALSE,
-    'bundle of' => 'flexiform_submission',
     'exportable' => TRUE,
     'entity keys' => array(
       'id' => 'id',
@@ -144,28 +102,6 @@ function flexiform_entity_info() {
   );
 
   return $return;
-}
-
-/**
- * Implements hook_entity_info_alter().
- *
- * We are adding the info about the flexiforms via a hook to avoid a recursion
- * issue as loading the flexiforms requires the entity info as well.
- *
- * @todo This needs to be improved
- */
-function flexiform_entity_info_alter(&$entity_info) {
-  foreach (flexiform_get_flexiforms() as $type => $info) {
-    $entity_info['flexiform_submission']['bundles'][$type] = array(
-      'label' => $info->label,
-      'admin' => array(
-        'path' => 'admin/structure/flexiforms/manage/%flexiform',
-        'real path' => 'admin/structure/flexiforms/manage/' . $type,
-        'bundle argument' => 4,
-        'access arguments' => array('administer flexiforms'),
-      ),
-    );
-  }
 }
 
 /**
@@ -188,103 +124,9 @@ function flexiform_permission() {
       'title' => t('Administer flexiforms'),
       'description' => t('Create and delete fields for flexiforms, and set their permissions.'),
     ),
-    'administer flexiform_submissions' => array(
-      'title' => t('Administer flexiform_submissions'),
-      'description' => t('Edit and delete all flexiform_submissions'),
-    ),
   );
 
-  //Generate permissions per flexiform_submission
-  foreach (flexiform_get_flexiforms() as $form) {
-    $form_name = check_plain($form->form);
-    $permissions += array(
-      "submit a $form_name flexiform" => array(
-        'title' => t('Submit a %form_name Flexiform (create a new submission)', array('%form_name' => $form->label)),
-      ),
-      "edit own $form_name flexiform submissions" => array(
-        'title' => t('Edit own %form_name Flexiform Submissions', array('%form_name' => $form->label)),
-      ),
-      "edit any $form_name flexiform submission" => array(
-        'title' => t('Edit any %form_name Flexiform Submission', array('%form_name' => $form->label)),
-      ),
-      "view own $form_name flexiform submissions" => array(
-        'title' => t('View own %form_name Flexiform Submissions', array('%form_name' => $form->label)),
-      ),
-      "view any $form_name flexiform submission" => array(
-        'title' => t('View any %form_name Flexiform Submissions', array('%form_name' => $form->label)),
-      ),
-      "delete own $form_name flexiform submissions" => array(
-        'title' => t('View own %form_name Flexiform Submissions', array('%form_name' => $form->label)),
-      ),
-      "delete any $form_name flexiform submission" => array(
-        'title' => t('View any %form_name Flexiform Submissions', array('%form_name' => $form->label)),
-      ),
-    );
-  }
   return $permissions;
-}
-
-/**
- * Determines whether the given user has access to a flexiform_submission.
- *
- * @param $op
- *   The operation being performed. One of 'view', 'update', 'create', 'delete'
- *   or just 'edit' (being the same as 'create' or 'update').
- * @param $flexiform_submission
- *   Optionally a flexiform_submission or a flexiform to check access for. If nothing is
- *   given, access for all flexiform_submissions is determined.
- * @param $account
- *   The user to check for. Leave it to NULL to check for the global user.
- * @return boolean
- *   Whether access is allowed or not.
- */
-function flexiform_submission_access($op, $flexiform_submission = NULL, $account = NULL) {
-  // Check if the user can administer everything. This always takes precident.
-  if (user_access('administer flexiform_submissions', $account)) {
-    return TRUE;
-  }
-
-  // If the account is NULL use the global user. We deal with this here so that
-  // implementations of hook_flexiform_submission_access() always get a user
-  // object.
-  if ($account === NULL) {
-    global $user;
-    $account = $user;
-  }
-
-  // See if other modules want to influence access.
-  $access = module_invoke_all('flexiform_submission_access', $op, $flexiform_submission, $account);
-
-  // Any FALSE responses will always result in a denial.
-  if (in_array(FALSE, $access, TRUE)) {
-    return FALSE;
-  }
-  // Otherwise any TRUE response will give access.
-  elseif (in_array(TRUE, $access, TRUE)) {
-    return TRUE;
-  }
-
-  // If no other modules have any response, we'll fall back to our normal
-  // access checks.
-
-  // Special case for when adding new submissions.
-  if ($op == 'submit') {
-    $form_name = $flexiform_submission;
-    return user_access("submit a $form_name flexiform", $account);
-  }
-  elseif (isset($flexiform_submission) && $form_name = $flexiform_submission->form) {
-    // If we don't recognise the op, return FALSE.
-    if (!in_array($op, array('view','edit','delete'))) {
-      return FALSE;
-    }
-    // Check the user access for this op on this form.
-    elseif (user_access("$op any $form_name flexiform submission", $account)) {
-      return TRUE;
-    }
-    elseif ($flexiform_submission->user == $account->uid && user_access("$op own $form_name flexiform submissions", $account)) {
-      return TRUE;
-    }
-  }
 }
 
 /**
@@ -352,77 +194,6 @@ function flexiform_load($form) {
 }
 
 /**
- * Fetch a flexiform_submission object. Make sure that the wildcard you choose
- * in the flexiform_submission entity definition fits the function name here.
- *
- * @param $flexiform_submission_id
- *   Integer specifying the flexiform_submission id.
- * @param $reset
- *   A boolean indicating that the internal cache should be reset.
- * @return
- *   A fully-loaded $flexiform_submission object or FALSE if it cannot be loaded.
- *
- * @see flexiform_submission_load_multiple()
- */
-function flexiform_submission_load($flexiform_submission_id, $reset = FALSE) {
-  $flexiform_submissions = flexiform_submission_load_multiple(array($flexiform_submission_id), array(), $reset);
-  return reset($flexiform_submissions);
-}
-
-/**
- * Load multiple flexiform_submissions based on certain conditions.
- *
- * @param $flexiform_submission_ids
- *   An array of flexiform_submission IDs.
- * @param $conditions
- *   An array of conditions to match against the {flexiform_submission} table.
- * @param $reset
- *   A boolean indicating that the internal cache should be reset.
- * @return
- *   An array of flexiform_submission objects, indexed by flexiform_submission_id.
- *
- * @see entity_load()
- * @see flexiform_submission_load()
- */
-function flexiform_submission_load_multiple($flexiform_submission_ids = array(), $conditions = array(), $reset = FALSE) {
-  return entity_load('flexiform_submission', $flexiform_submission_ids, $conditions, $reset);
-}
-
-/**
- * Deletes a flexiform_submission.
- */
-function flexiform_submission_delete(FlexiformSubmission $flexiform_submission) {
-  $flexiform_submission->delete();
-}
-
-/**
- * Delete multiple flexiform_submissions.
- *
- * @param $flexiform_submission_ids
- *   An array of flexiform_submission IDs.
- */
-function flexiform_submission_delete_multiple(array $flexiform_submission_ids) {
-  entity_get_controller('flexiform_submission')->delete($flexiform_submission_ids);
-}
-
-/**
- * Create a flexiform_submission object.
- */
-function flexiform_submission_create($values = array()) {
-  return entity_get_controller('flexiform_submission')->create($values);
-}
-
-/**
- * Saves a flexiform_submission to the database.
- *
- * @param $flexiform_submission
- *   The flexiform_submission object.
- */
-function flexiform_submission_save(FlexiformSubmission $flexiform_submission) {
-  return $flexiform_submission->save();
-}
-
-/**
  * Saves a flexiform to the db.
  */
 function flexiform_save(Flexiform $form) {
@@ -437,33 +208,6 @@ function flexiform_delete(Flexiform $form) {
 }
 
 /**
- * URI callback for flexiform_submissions
- */
-function flexiform_submission_uri(FlexiformSubmission $flexiform_submission){
-  return array(
-    'path' => 'flexiform_submission/' . $flexiform_submission->flexiform_submission_id,
-  );
-}
-
-/**
- * Menu title callback for showing individual entities
- */
-function flexiform_submission_page_title(FlexiformSubmission $flexiform_submission){
-  return entity_label('flexiform_submission', $flexiform_submission);
-}
-
-/**
- * Sets up content to show an individual flexiform_submission
- * @todo - get rid of drupal_set_title();
- */
-function flexiform_submission_page_view($flexiform_submission, $view_mode = 'full') {
-  $controller = entity_get_controller('flexiform_submission');
-  $content = $controller->view(array($flexiform_submission->flexiform_submission_id => $flexiform_submission));
-  //drupal_set_title($flexiform_submission->name);
-  return $content;
-}
-
-/**
  * Split a namespace into entity and field name
  */
 function flexiform_formfield_load($string) {
@@ -471,28 +215,10 @@ function flexiform_formfield_load($string) {
 }
 
 /**
- * Implements hook_views_api().
- */
-function flexiform_views_api() {
-  return array(
-    'api' => 3,
-    'path' => drupal_get_path('module', 'flexiform') . '/views',
-  );
-}
-
-/**
  * Implement hook_theme().
  */
 function flexiform_theme() {
   return array(
-    'flexiform_submission_add_list' => array(
-      'variables' => array('content' => array()),
-      'file' => 'flexiform_submission.admin.inc',
-    ),
-    'flexiform_submission' => array(
-      'render element' => 'elements',
-      'template' => 'flexiform_submission',
-    ),
     'flexiform_field_table' => array(
       'render element' => 'elements',
     ),
@@ -500,22 +226,6 @@ function flexiform_theme() {
       'render element' => 'elements',
     ),
   );
-}
-
-/**
- * Implements hook_menu_local_tasks_alter().
- */
-function flexiform_menu_local_tasks_alter(&$data, $router_item, $root_path) {
-  // Add action link 'admin/structure/flexiform_submissions/add' on 'admin/structure/flexiform_submissions'.
-  if ($root_path == 'admin/content/flexiform_submissions') {
-    $item = menu_get_item('flexiform');
-    if ($item['access']) {
-      $data['actions']['output'][] = array(
-        '#theme' => 'menu_local_action',
-        '#link' => $item,
-      );
-    }
-  }
 }
 
 /**
@@ -537,43 +247,9 @@ function flexiform_element_info() {
 }
 
 /**
- * Implements hook_field_create_instance().
- *
- * When a field is added to a flexiform_submission bundle add it to that forms form_fields.
- */
-function flexiform_field_create_instance($instance) {
-  // Only act on fields added to the flexiform_submission entity.
-  if ($instance['entity_type'] != 'flexiform_submission') {
-    return;
-  }
-
-  // Load the flexiform entity
-  $flexiform = flexiform_load($instance['bundle']);
-
-  // Construct the form field settings array.
-  $form_field = array(
-    'type' => 'field',
-    'field_name' => $instance['field_name'],
-    'entity_namespace' => 'base_entity',
-    'instance' => array(
-      'label' => $instance['label'],
-      'widget' => array(
-        'weight' => $intance['widget']['weight'],
-      ),
-    ),
-  );
-
-  // Add the field to the flexiform->elements array.
-  $flexiform->elements['base_entity'][$instance['field_name']] = $form_field;
-
-  // Save the flexiform.
-  $flexiform->save();
-}
-
-/**
  * Retreive a list of flexiform groups.
  */
-function flexifrom_get_groups() {
+function flexiform_get_groups() {
   $groups = &drupal_static(__FUNCTION__, NULL);
 
   if ($groups === NULL) {

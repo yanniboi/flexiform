@@ -181,7 +181,7 @@ class FlexiformUIController extends EntityDefaultUIController {
       $items["{$this->path}/manage/{$wildcard}/rules/add-action"] = array(
         'title' => 'Add Action',
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('rules_admin_add_reaction_rule', $bundle_info['admin']['real path']),
+        'page arguments' => array('rules_admin_add_reaction_rule', "{$this->path}/manage/{$wildcard}/rules/add-action"),
         'access callback' => TRUE,
         'file' => 'rules_admin.inc',
         'file path' => drupal_get_path('module', 'rules_admin'),

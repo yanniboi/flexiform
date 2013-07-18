@@ -13,61 +13,6 @@
 function flexiform_schema() {
   $schema = array();
 
-  $schema['flexiform_submission'] = array(
-    'description' => 'The base table for flexiform_submission entities.',
-    'fields' => array(
-      'flexiform_submission_id' => array(
-        'description' => 'Primary Key: Identifier for a flexiform_submission.',
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-      ),
-      'form' => array(
-        'description' => 'The {flexiform}.form of this flexiform_submission.',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'language' => array(
-        'description' => 'The language of the flexiform_submission.',
-        'type' => 'varchar',
-        'length' => 32,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'created' => array(
-        'description' => 'The Unix timestamp when the flexiform_submission was created.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'changed' => array(
-        'description' => 'The Unix timestamp when the flexiform_submission was most recently saved.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'user' => array(
-        'description' => 'The User whoe created this submission',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'entities' => array(
-        'type' => 'text',
-        'not null' => FALSE,
-        'size' => 'big',
-        'serialize' => TRUE,
-        'description' => 'A serialized array of entities involved in this flexiform.',
-      ),
-    ),
-    'primary key' => array('flexiform_submission_id'),
-    'indexes' => array(
-      'type' => array('form'),
-    ),
-  );
-
   $schema['flexiform'] = array(
     'description' => 'Stores information about defined flexiforms.',
     'fields' => array(
@@ -323,4 +268,70 @@ function flexiform_update_7006() {
       }
     }
   }
+}
+
+/**
+ * Move flexiform_submission stuff to a submodule.
+ */
+function flexiform_update_7007() {
+  module_enable(array('flexiform_webform'), FALSE);
+
+  // Make flexiform webforms out of all flexiforms with the base entity set to
+  // flexiform submission.
+  $webforms = db_select('flexiform', 'f')
+    ->fields('f', array('label', 'form', 'id'))
+    ->condition('base_entity', 'flexiform_submission')
+    ->execute()
+    ->fetchAllAssoc('form');
+
+  foreach ($webforms as $record) {
+    $values = array(
+      'label' => $record->label,
+      'webform' => $record->form,
+    );
+
+    $flexiform_webform = entity_create('flexiform_webform', $values);
+    $flexiform_webform->save();
+
+    foreach (field_info_instances('flexiform_submission', $record->form) as $instance) {
+      $instance['entity_type'] = 'flexiform_webform_submission';
+      field_create_instance($instance);
+
+      $tables = array(
+        'field_data_' . $instance['field_name'],
+        'field_revision_' . $instance['field_name'],
+      );
+
+      foreach ($tables as $table) {
+        db_update($table, 't')
+          ->fields(array(
+            'entity_type' => 'flexiform_webform_submission',
+          ))
+          ->condition('entity_type', 'flexiform_submission')
+          ->condition('bundle', $record->form)
+          ->execute();
+      }
+    }
+  }
+
+  // Update the base entities on these flexiforms.
+  db_update('flexiform')
+    ->fields(array('base_entity' => 'flexiform_webform_submission'))
+    ->condition('form', array_keys($webforms))
+    ->execute();
+
+  // Migrate existing submissions to the new entity tables.
+  $query = db_select('flexiform_submission', 'f');
+  $query->addField('f', 'flexiform_submission_id', 'id');
+  $query->addField('f', 'form', 'webform');
+  $query->addField('f', 'language', 'language');
+  $query->addField('f', 'created', 'created');
+  $query->addField('f', 'changed', 'changed');
+  $query->addField('f', 'user', 'user');
+
+  db_insert('flexiform_webform_submission')
+    ->from($query)
+    ->execute();
+
+  db_drop_table('flexiform_submission');
 }
