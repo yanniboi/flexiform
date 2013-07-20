@@ -29,51 +29,6 @@ function hook_flexiform_group_info() {
 }
 
 /**
- * Influence the access for a submission.
- *
- * Access to flexiform submissions may involve checks outside of a simple
- * permission permission check, so we allow modules to influence the result
- * of an access check. Implementations can allow, deny or leave unaltered the
- * access depending on what is returned.
- *
- * @param string $op
- *   The operation being performed.
- * @param NULL|string|FlexiformSubmission $flexiform_submission
- *   The flexiform submission entity we are checking against, the flexiform
- *   machine name or NULL if we are checking global permissions.
- * @param stdClass $account
- *   The user account we are checking for.
- *
- * @param return NULL|boolean
- *   Return a boolean TRUE to allow access, FALSE to deny access or NULL to
- *   leave access unaltered. One or more TRUE responses will allow access
- *   unless a FALSE is returned by another implementation.
- *
- * @see flexiform_submission_access()
- */
-function hook_flexiform_submission_access($op, $flexiform_submission, $account) {
-  // We don't want to influence global permissions.
-  if (!$flexiform_submission) {
-    return;
-  }
-
-  // Find our the form group this access check relates to.
-  $form_name = is_object($flexiform_submission) ? $flexiform_submission->form: $flexiform_submission;
-  $flexiform = flexiform_load($form_name);
-
-  // Always allow access to any operation on the open_form form group and
-  // prevent any access to the closed_form group for everyone except uid 1.
-  if ($flexiform->form_group == 'open_form') {
-    return TRUE;
-  }
-  elseif ($flexiform->form_group == 'closed_form' && $account->uid != 1) {
-    return FALSE;
-  }
-
-  // All other access checks will be unaffected by this implementation.
-}
-
-/**
  * Alter a flexiform as it gets built.
  *
  * @param array $form
@@ -87,7 +42,7 @@ function hook_flexiform_submission_access($op, $flexiform_submission, $account) 
  * @see FlexiformBuilderFlexiform::form()
  */
 function hook_flexiform_build_alter(&$form, &$form_state, $flexiform) {
-  
+
 }
 
 /**
@@ -105,5 +60,73 @@ function hook_flexiform_build_alter(&$form, &$form_state, $flexiform) {
  * @see flexiform_get_builder_info()
  */
 function hook_flexiform_build_FLEXIFORM_BUILDER_alter(&$form, &$form_state, $flexiform) {
-  
+
+}
+
+/**
+ * Act on the validation of a flexiform.
+ *
+ * @param array $form
+ *   The form array that has been built by the flexiform builder.
+ * @param array $form_state
+ *   The form_state of the form.
+ * @param Flexiform $flexiform
+ *   The flexiform object.
+ *
+ * @see FlexiformBuilder::invoke()
+ * @see FlexiformBuilderFlexiform::formValidate()
+ */
+function hook_flexiform_build_validate_alter(&$form, &$form_state, $flexiform) {
+
+}
+
+/**
+ * Act on the validation of a flexiform built by a particular builder.
+ *
+ * @param array $form
+ *   The form array that has been built by the flexiform builder.
+ * @param array $form_state
+ *   The form_state of the form.
+ * @param Flexiform $flexiform
+ *   The flexiform object.
+ *
+ * @see FlexiformBuilder::invoke()
+ * @see FlexiformBuilderFlexiform::formValidate()
+ */
+function hook_flexiform_build_FLEXIFORM_BUILDER_validate_alter(&$form, &$form_state, $flexiform) {
+
+}
+
+/**
+ * Act on the submission of a flexiform.
+ *
+ * @param array $form
+ *   The form array that has been built by the flexiform builder.
+ * @param array $form_state
+ *   The form_state of the form.
+ * @param Flexiform $flexiform
+ *   The flexiform object.
+ *
+ * @see FlexiformBuilder::invoke()
+ * @see FlexiformBuilderFlexiform::formSubmit()
+ */
+function hook_flexiform_build_submit_alter(&$form, &$form_state, $flexiform) {
+
+}
+
+/**
+ * Act on the submission of a flexiform built by a particular builder.
+ *
+ * @param array $form
+ *   The form array that has been built by the flexiform builder.
+ * @param array $form_state
+ *   The form_state of the form.
+ * @param Flexiform $flexiform
+ *   The flexiform object.
+ *
+ * @see FlexiformBuilder::invoke()
+ * @see FlexiformBuilderFlexiform::formSubmit()
+ */
+function hook_flexiform_build_FLEXIFORM_BUILDER_submit_alter(&$form, &$form_state, $flexiform) {
+
 }
