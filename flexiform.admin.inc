@@ -330,7 +330,7 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
     '#description' => t('Select a group for this flexiform. Some groups do special things with forms.'),
   );
 
-  $groups = flexifrom_get_groups();
+  $groups = flexiform_get_groups();
   if (!empty($flexiform->is_new) && count($groups) > 1) {
     $form['form_group']['#type'] = 'select';
     $form['form_group']['#default_value'] = isset($flexiform->form_group) ? $flexiform->form_group: FALSE;
