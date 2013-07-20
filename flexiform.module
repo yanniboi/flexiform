@@ -416,23 +416,7 @@ function flexiform_entity_type_get_getters($entity_type) {
 }
 
 /**
- * Define standard entity getters. Entity getters are used by flexiform to load
- * entities into the flexiform entity stack. Once a flexiform submission has
- * been saved, entities with explicit ID's are loaded based on which entities
- * were submitted when the submission was originally created.
- *
- * Each getter has the following keys
- * - label (required) : A human readable name for the getter
- * - description : A Description of the getter
- * - entity_types (required) : An array of entity types this getter can return
- * - file : Which file is the getter in
- * - params : An array of parameters for the getter keyed by variable name with the
- *   following keys
- *   - type : What type of parameter to expect. If set to entity, this will display
- *     a drop down of the entities already in the forms stack
- *   - entity_type : What type of entity to expect
- * - callback : the name of the function to call for the getter (defaults to
- *   flexiform_entity_getter_$getterkey
+ * Implements hook_flexiform_entity_getter_info().
  */
 function flexiform_flexiform_entity_getter_info() {
   $getters = array();
@@ -557,20 +541,7 @@ function flexiform_get_element_info($entity_type = '', $bundle = '', $name = '')
 }
 
 /**
- * Define elements for use in flexiforms that use the FlexiformBuilderFlexiform
- * form builder.
- *
- * Elements should be defined in a multi-dimensional array keyed by entity
- * type, bundle and name.
- *
- * Each element definition should be an array with at least the following keys:
- * - label: The human readable label for the element, this can usually be
- *     overridden once the element is in a form.
- * - class: The Element class to use for the rendering of the element.
- *
- * The whole definition for an element will be passed to the element
- * constructor so it is possible to store other settings in this array as
- * necessary.
+ * Implements hook_flexiform_element_info().
  */
 function flexiform_flexiform_element_info() {
   $elements = array();
