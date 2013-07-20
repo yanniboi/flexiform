@@ -229,6 +229,22 @@ function flexiform_theme() {
 }
 
 /**
+ * Implements hook_forms().
+ */
+function flexiform_forms($form_id, $args) {
+  $forms = array();
+
+  $parts = explode('__', $form_id);
+  if ($parts[0] == 'flexiform') {
+    $forms[$form_id] = array(
+      'callback' => 'flexiform',
+    );
+  }
+
+  return $forms;
+}
+
+/**
  * Implements hook_element_info().
  */
 function flexiform_element_info() {

@@ -49,12 +49,8 @@ function flexiform_get_base_entity($flexiform, $base_entity_id = FALSE) {
  * @see flexiform_simple()
  */
 function flexiform_wrapper($flexiform, $base_entity) {
-  if ($flexiform->advanced) {
-    return drupal_get_form('flexiform', $flexiform, $base_entity);
-  }
-  else {
-    return drupal_get_form('flexiform', $flexiform, $base_entity);
-  }
+  $form_id = 'flexiform__' . $flexiform->form;
+  return drupal_get_form($form_id, $flexiform, $base_entity);
 }
 
 /**
