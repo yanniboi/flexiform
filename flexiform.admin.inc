@@ -364,13 +364,6 @@ function flexiform_form($form, &$form_state, $flexiform, $op = 'edit') {
     '#description' => t('The path to an edit version of this form. Must include a single \'%\' where the id of the base entity will go.'),
   );
 
-  $form['advanced'] = array(
-    '#title' => t('Advanced form'),
-    '#type' => 'checkbox',
-    '#default_value' => isset($flexiform->advanced) ? $flexiform->advanced : FALSE,
-    '#description' => t('Check this box to use the advanced form. WARNING: Advanced users only.'),
-  );
-
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',
