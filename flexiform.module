@@ -596,7 +596,6 @@ function flexiform_flexiform_element_info() {
 
   // Get node elements
   foreach (node_type_get_types() as $bundle => $info) {
-    dpm($info, $bundle);
     if ($info->has_title) {
       $elements['node'][$bundle]['node:title'] = array(
         'label' => $info->title_label,
@@ -605,6 +604,27 @@ function flexiform_flexiform_element_info() {
         'group' => 'Node',
       );
     }
+
+    $elements['node'][$bundle]['node:status'] = array(
+      'label' => t('Published'),
+      'class' => 'FlexiformElementNodeStatus',
+      'type' => 'status',
+      'group' => 'Node',
+    );
+
+    $elements['node'][$bundle]['node:promote'] = array(
+      'label' => t('Promoted to front page'),
+      'class' => 'FlexiformElementNodePromote',
+      'type' => 'promote',
+      'group' => 'Node',
+    );
+
+    $elements['node'][$bundle]['node:sticky'] = array(
+      'label' => t('Sticky at top of lists'),
+      'class' => 'FlexiformElementNodeSticky',
+      'type' => 'sticky',
+      'group' => 'Node',
+    );
   }
 
   return $elements;
