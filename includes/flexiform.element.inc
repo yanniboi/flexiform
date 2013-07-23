@@ -84,7 +84,7 @@ class FlexiformElement implements FlexiformElementInterface {
    * Get the label for this form element.
    */
   public function label() {
-    return '';
+    return $this->element_info['label'];
   }
 
   /**
@@ -99,6 +99,13 @@ class FlexiformElement implements FlexiformElementInterface {
    */
   public function name() {
     return $this->element_name;
+  }
+
+  /**
+   * Get the type of this form element.
+   */
+  public function type() {
+    return $this->element_info['type'];
   }
 
   /**
@@ -249,6 +256,8 @@ class FlexiformElement implements FlexiformElementInterface {
    */
   public function form($form, &$form_state, $entity) {
     $form[$this->element_namespace]['#weight'] = $this->getWeight();
+    $form[$this->element_namespace]['#flexiform'] = $this->flexiform;
+    $form[$this->element_namespace]['#flexiform_element'] = $this;
 
     if (!empty($form[$this->element_namespace]['#title'])
       && !empty($this->settings['display_options']['hide_label'])) {
@@ -281,7 +290,7 @@ class FlexiformElement implements FlexiformElementInterface {
    */
   public function formIsEmpty($form, &$form_state, $entity) {
     $values = $this->formExtractValues($form, $form_state, $entity);
-    return !empty($values);
+    return empty($values);
   }
 
 
@@ -292,7 +301,7 @@ class FlexiformElement implements FlexiformElementInterface {
     $settings = array(
       'entity_namespace' => $this->entity_namespace,
       'element_name' => $this->element_name,
-      'weight' => $this->weight,
+      'weight' => $this->getWeight(),
       'label' => $this->label(),
       'display_options' => $this->settings['display_options'],
     );
@@ -347,6 +356,7 @@ class FlexiformElement implements FlexiformElementInterface {
     $class_name = $element_info['class'];
     if (!class_exists($class_name)
       || !in_array('FlexiformElementInterface', class_implements($class_name))) {
+      dpm(class_exists($class_name) ? 'FOUND' : 'NOT FOUND', $class_name);
       throw new Exception('Invalid Flexiform Element class ' . $class_name . ' for element ' . $element_name);
     }
 

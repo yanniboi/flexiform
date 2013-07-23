@@ -594,5 +594,18 @@ function flexiform_flexiform_element_info() {
     }
   }
 
+  // Get node elements
+  foreach (node_type_get_types() as $bundle => $info) {
+    dpm($info, $bundle);
+    if ($info->has_title) {
+      $elements['node'][$bundle]['node:title'] = array(
+        'label' => $info->title_label,
+        'class' => 'FlexiformElementNodeTitle',
+        'type' => 'title',
+        'group' => 'Node',
+      );
+    }
+  }
+
   return $elements;
 }

@@ -688,7 +688,7 @@ function flexiform_manage_form_fields_form($form, &$form_state, $flexiform) {
 function flexiform_manage_form_fields_form_validate($form, &$form_state) {
   $element = $form_state['values']['fields']['_add_element'];
 
-  if (array_filter(array($element['label'], $element['entity'], $element['element']))) {
+  if (array_filter(array($element['label'], $element['entity'], $element['field']))) {
     // Missing Label
     if (!$element['label']) {
       form_set_error('fields][_add_element][label', t('Add element: you must provide a label'));

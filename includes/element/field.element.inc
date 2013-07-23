@@ -242,9 +242,6 @@ class FlexiformElementField extends FlexiformElement{
       $form_field['#parents'] = $form['#parents'];
       array_push($form_field['#parents'], $this->field_name);
 
-      $form_field['#flexiform'] = $this->flexiform;
-      $form_field['#flexiform_element'] = $this;
-
       if (!empty($instance['remove_none'])) {
         unset($form_field[$language]['#options']['']);
         unset($form_field[$language]['#options']['_none']);
