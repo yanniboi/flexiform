@@ -295,7 +295,7 @@ function flexiform_update_7006() {
 function flexiform_update_7007() {
   module_enable(array('flexiform_webform'), FALSE);
 
-  db_update('field_config_instance', 'fci')
+  db_update('field_config_instance')
     ->fields(array(
       'entity_type' => 'field_webform_submission'
     ))
@@ -328,7 +328,7 @@ function flexiform_update_7007() {
       );
 
       foreach ($tables as $table) {
-        db_update($table, 't')
+        db_update($table)
           ->fields(array(
             'entity_type' => 'flexiform_webform_submission',
           ))
