@@ -181,6 +181,25 @@ function flexiform_update_7003() {
     ))
     ->expression('base_entity_bundle', 'form')
     ->execute();
+
+  foreach (entity_load('flexiform') as $flexiform) {
+    $flexiform->entities['base_entity'] = $flexiform->entities['this_submission'];
+    $flexiform->entities['base_entity']['getter'] = 'base_entity';
+    $flexiform->entities['base_entity']['namespace'] = 'base_entity';
+
+    foreach ($flexiform->elements as $entity_namespace => $elements) {
+      if ($entity_namespace == 'this_submission') {
+        $flexiform->elements['base_entity'] = $elements;
+        unset($flexiform->elements['this_submission']);
+
+        foreach ($flexiform->elements['base_entity'] as &$element) {
+          $element['entity_namespace'] = 'base_entity';
+        }
+      }
+    }
+
+    $flexiform->save();
+  }
 }
 
 /**
@@ -260,7 +279,7 @@ function flexiform_update_7006() {
 
     if (module_exists('flexiform_element_group')) {
       $groups = field_group_info_groups('flexiform', $flexiform->form, 'form', TRUE);
-      foreach( $groups as $group) {
+      foreach ($groups as $group) {
         foreach ($group->children as $key => $element_name) {
           $group->children[$key] = preg_replace('/\_\_/', ':', $element_name, 2);
         }
@@ -276,6 +295,14 @@ function flexiform_update_7006() {
 function flexiform_update_7007() {
   module_enable(array('flexiform_webform'), FALSE);
 
+  db_update('field_config_instance', 'fci')
+    ->fields(array(
+      'entity_type' => 'field_webform_submission'
+    ))
+    ->condition('entity_type', 'field_submission')
+    ->execute();
+  drupal_flush_all_caches();
+
   // Make flexiform webforms out of all flexiforms with the base entity set to
   // flexiform submission.
   $webforms = db_select('flexiform', 'f')
@@ -286,6 +313,7 @@ function flexiform_update_7007() {
 
   foreach ($webforms as $record) {
     $values = array(
+      'id' => $record->id,
       'label' => $record->label,
       'webform' => $record->form,
     );
@@ -293,10 +321,7 @@ function flexiform_update_7007() {
     $flexiform_webform = entity_create('flexiform_webform', $values);
     $flexiform_webform->save();
 
-    foreach (field_info_instances('flexiform_submission', $record->form) as $instance) {
-      $instance['entity_type'] = 'flexiform_webform_submission';
-      field_create_instance($instance);
-
+    foreach (field_info_instances('flexiform_webform_submission', $record->form) as $instance) {
       $tables = array(
         'field_data_' . $instance['field_name'],
         'field_revision_' . $instance['field_name'],
@@ -310,6 +335,21 @@ function flexiform_update_7007() {
           ->condition('entity_type', 'flexiform_submission')
           ->condition('bundle', $record->form)
           ->execute();
+      }
+    }
+
+    $flexiform = entity_load_single('flexiform', $record->form);
+    $flexiform->entities['base_entity']['entity_type'] = 'flexiform_webform_submission';
+    $flexiform->save();
+
+    if (module_exists('field_group')) {
+      $groups = field_group_info_groups('flexiform_submission', $record->form, 'form', TRUE);
+      foreach ($groups as $group) {
+        $group->entity_type = 'flexiform_webform_submission';
+        $bits = explode('|', $group->identifier);
+        $bits[1] = 'flexiform_webform_submission';
+        $group->identifier = implode('|', $bits);
+        ctools_export_crud_save('field_group', $group);
       }
     }
   }
@@ -336,4 +376,28 @@ function flexiform_update_7007() {
     ->execute();
 
   db_drop_table('flexiform_submission');
+}
+
+/**
+ * Move targets for entity reference fields.
+ */
+function flexiform_update_7008() {
+  if (!module_exists('entityreference')) {
+    return;
+  }
+
+  foreach (field_read_fields(array('type' => 'entityreference')) as $field) {
+    switch ($field['settings']['target_type']) {
+      case 'flexiform_submission':
+        $field['settings']['target_type'] = 'flexiform_webform_submission';
+        break;
+      case 'flexiform':
+        $field['settings']['target_type'] = 'flexiform_webform';
+        break;
+      default:
+        continue;
+    }
+
+    field_update_field($field);
+  }
 }

@@ -21,7 +21,7 @@ function flexiform_webform_entity_info() {
     'exportable' => TRUE,
     'entity keys' => array(
       'id' => 'id',
-      'name' => 'form',
+      'name' => 'webform',
       'label' => 'label',
     ),
     'access callback' => 'flexiform_access',
@@ -80,7 +80,7 @@ function flexiform_webform_entity_info_alter(&$entity_info) {
     $entity_info['flexiform_webform_submission']['bundles'][$webform->webform] = array(
       'label' => $webform->label,
       'admin' => array(
-        'path' => 'admin/structure/flexiform_webforms/manage/%flexiform',
+        'path' => 'admin/structure/flexiform_webforms/manage/%flexiform_webform',
         'real path' => 'admin/structure/flexiform_webforms/manage/' . $webform->webform,
         'bundle argument' => 4,
         'access arguments' => array('administer flexiform_webforms'),
