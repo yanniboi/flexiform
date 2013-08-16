@@ -299,7 +299,7 @@ function flexiform_update_7007() {
     ->fields(array(
       'entity_type' => 'flexiform_webform_submission'
     ))
-    ->condition('entity_type', 'field_submission')
+    ->condition('entity_type', 'flexiform_submission')
     ->execute();
   drupal_flush_all_caches();
 
