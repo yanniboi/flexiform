@@ -84,6 +84,10 @@ class FlexiformElement implements FlexiformElementInterface {
    * Get the label for this form element.
    */
   public function label() {
+    if (!empty($this->settings['label'])) {
+      return $this->settings['label'];
+    }
+
     return $this->element_info['label'];
   }
 
@@ -158,6 +162,13 @@ class FlexiformElement implements FlexiformElementInterface {
    * Build the configure form for the element.
    */
   public function configureForm($form, &$form_state, $flexiform) {
+    $form['label'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Label'),
+      '#default_value' => !empty($this->settings['label']) ? $this->settings['label'] : '',
+      '#weight' => -99,
+    );
+
     $form['display_options'] = array(
       '#tree' => TRUE,
       '#type' => 'fieldset',
@@ -183,6 +194,10 @@ class FlexiformElement implements FlexiformElementInterface {
       '#default_value' => !empty($this->settings['display_options']['hide_element']),
     );
 
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+    );
     return $form;
   }
 
@@ -195,6 +210,7 @@ class FlexiformElement implements FlexiformElementInterface {
    * Submit the configure form for the element.
    */
   public function configureFormSubmit($form, &$form_state, $flexiform) {
+    $this->settings['label'] = $form_state['values']['label'];
     $this->settings['display_options']['css'] = $form_state['values']['display_options']['css_classes'];
     $this->settings['display_options']['hide_label'] = $form_state['values']['display_options']['hide_label'];
     $this->settings['display_options']['hide_element'] = $form_state['values']['display_options']['hide_element'];
@@ -356,7 +372,6 @@ class FlexiformElement implements FlexiformElementInterface {
     $class_name = $element_info['class'];
     if (!class_exists($class_name)
       || !in_array('FlexiformElementInterface', class_implements($class_name))) {
-      dpm(class_exists($class_name) ? 'FOUND' : 'NOT FOUND', $class_name);
       throw new Exception('Invalid Flexiform Element class ' . $class_name . ' for element ' . $element_name);
     }
 

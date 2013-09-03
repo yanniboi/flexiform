@@ -25,6 +25,7 @@ files[] = includes/element/node_title.element.inc
 files[] = includes/element/node_promote.element.inc
 files[] = includes/element/node_status.element.inc
 files[] = includes/element/node_sticky.element.inc
+files[] = includes/element/custom_html.element.inc
 
 files[] = plugins/entity/PanelizerEntityFlexiformSubmission.class.inc
 files[] = views/flexiform.views.inc

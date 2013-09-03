@@ -568,6 +568,18 @@ function flexiform_flexiform_element_info() {
     ->execute()
     ->fetchAllAssoc('form');
 
+  // Add custom form elements to every entity type.
+  foreach (entity_get_info() as $entity_type => $info) {
+    foreach ($info['bundles'] as $bundle => $info) {
+      $elements[$entity_type][$bundle]['custom:html'] = array(
+        'label' => t('Custom HTML'),
+        'class' => 'FlexiformElementCustomHtml',
+        'type' => 'custom_html',
+        'group' => 'Custom',
+      );
+    }
+  }
+
   foreach ($forms as $form) {
     $elements[$form->base_entity][$form->base_entity_bundle]['flexiform:' . $form->form] = array(
       'label' => $form->label,
