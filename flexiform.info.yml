@@ -1,0 +1,8 @@
+name: Flexible Forms
+type: module
+description: 'Build forms based on multiple entities.'
+package: Forms
+core: 8.x
+dependencies:
+  - entity
+  - views
