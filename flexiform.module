@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * @file
+ * Allow multiple entities to be used in an entity form display.
+ */
+
+/**
+ * Implements hook_entity_type_build().
+ */
+function flexiform_entity_type_build(array &$entity_types) {
+  $entity_form_display_type = $entity_types['entity_form_display'];
+  $entity_form_display_type->setClass('Drupal\flexiform\FlexiformEntityFormDisplay');
+}
