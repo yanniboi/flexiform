@@ -29,7 +29,7 @@ class FlexiformFormEntityManager {
    *
    * @var \Drupal\flexiform\FlexiformFormEntityInterface[]
    */
-   protected $formEntities;
+  protected $formEntities = [];
 
   /**
    * Construct a new FlexiformFormEntityManager.
@@ -41,19 +41,35 @@ class FlexiformFormEntityManager {
    */
   public function __construct(FlexiformEntityFormDisplayInterface $form_display, FieldableEntityInterface $entity = NULL) {
     $this->formDisplay = $form_display;
+    $this->initFormEntities($entity);
+  }
 
-    $context_definition = new ContextDefinition(
-      $this->formDisplay->getTargetEntityTypeId(),
-      $this->t(
+  /**
+   * Get the flexiform form entity plugin manager.
+   */
+  protected function getPluginManager() {
+    return \Drupal::service('plugin.manager.flexiform_form_entity');
+  }
+
+  /**
+   * Initialize form entities.
+   */
+  protected function initFormEntities(FieldableEntityInterface $entity = NULL) {
+    // Initialize the base entity.
+    $this->formEntities[''] = $this->getPluginManager()->createInstance('provided', [
+      'manager' => $this,
+      'map' => [],
+      'entity_type' => $this->formDisplay->getTargetEntityTypeId(),
+      'bundle' => $this->formDisplay->getTargetBundle(),
+      'label' => $this->t(
         'Base :entity_type',
         [
           ':entity_type' => \Drupal::service('entity_type.manager')
             ->getDefinition($this->formDisplay->getTargetEntityTypeId())->getLabel(),
         ]
-      )
-    );
-    $context_definition->addConstraint('Bundle', $this->formDisplay->getTargetBundle());
-    $this->formEntities[''] = new Context($context_definition, $entity);
+      ),
+      'entity' => $entity,
+    ]);
   }
 
   /**
@@ -65,6 +81,27 @@ class FlexiformFormEntityManager {
       $context_definitions[$namespace] = $form_entity->getContextDefinition();
     }
     return $context_definitions;
+  }
+
+  /**
+   * Get the form entities.
+   */
+  public function getFormEntities() {
+    return $this->formEntities;
+  }
+
+  /**
+   * Get the entity at a given namespace.
+   *
+   * @param string $namespace
+   *   The entity namespace to get.
+   */
+  public function getEntity($namespace = '') {
+    if (!isset($this->formEntities[$namespace])) {
+      throw new Exception($this->t('No entity at namespace :namespace', [':namespace' => $namespace]));
+    }
+
+    return $this->formEntities[$namespace]->getFormEntityContext()->getContextValue();
   }
 
 }

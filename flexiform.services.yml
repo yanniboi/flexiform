@@ -1,0 +1,4 @@
+services:
+  plugin.manager.flexiform_form_entity:
+    class: Drupal\flexiform\FlexiformFormEntityPluginManager
+    parent: default_plugin_manager

@@ -56,20 +56,19 @@ class FlexiformEntityFormDisplayEditForm extends EntityFormDisplayEditForm {
       '#empty' => t('This form display has no entities yet.'),
     ];
 
-    foreach ($this->getFormEntityManager()->getContextDefinitions() as $namespace => $context_definition) {
+    foreach ($this->getFormEntityManager()->getFormEntities() as $namespace => $form_entity) {
       $form['entities_section']['entities'][$namespace] = [
         'human_name' => [
-          '#plain_text' => $context_definition->getLabel(),
+          '#plain_text' => $form_entity->getFormEntityContextDefinition()->getLabel(),
         ],
         'plugin' => [
-          '#plain_text' => $namespace,
+          '#plain_text' => $form_entity->getLabel(),
         ],
         'operations' => [
           '#plain_text' => 'Operations',
         ],
       ];
     }
-    dpm($form);
 
     return $form;
   }
