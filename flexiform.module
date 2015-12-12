@@ -11,4 +11,5 @@
 function flexiform_entity_type_build(array &$entity_types) {
   $entity_form_display_type = $entity_types['entity_form_display'];
   $entity_form_display_type->setClass('Drupal\flexiform\FlexiformEntityFormDisplay');
+  $entity_form_display_type->setFormClass('edit', 'Drupal\flexiform\Form\FlexiformEntityFormDisplayEditForm');
 }
