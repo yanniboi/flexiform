@@ -28,4 +28,14 @@ interface FlexiformFormEntityInterface extends ContextAwarePluginInterface {
    */
   public function getLabel();
 
+  /**
+   * Get the entity type.
+   */
+  public function getEntityType();
+
+  /**
+   * Get the bundle.
+   */
+  public function getBundle();
+
 }

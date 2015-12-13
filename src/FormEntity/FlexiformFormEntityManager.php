@@ -8,6 +8,7 @@
 namespace Drupal\flexiform\FormEntity;
 
 use Drupal\flexiform\FlexiformEntityFormDisplayInterface;
+use Drupal\Core\DependencyInjection\DependencySerializationTrait;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Plugin\Context\Context;
 use Drupal\Core\Plugin\Context\ContextDefinition;
@@ -16,6 +17,7 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 class FlexiformFormEntityManager {
 
   use StringTranslationTrait;
+  use DependencySerializationTrait;
 
   /**
    * The form display config entity.
@@ -70,6 +72,11 @@ class FlexiformFormEntityManager {
       ),
       'entity' => $entity,
     ]);
+
+    foreach ($this->formDisplay->getFormEntityConfig() as $namespace => $configuration) {
+      $configuration['manager'] = $this;
+      $this->formEntities[$namespace] = $this->getPluginManager()->createInstance($configuration['plugin'], $configuration);
+    }
   }
 
   /**
@@ -88,6 +95,15 @@ class FlexiformFormEntityManager {
    */
   public function getFormEntities() {
     return $this->formEntities;
+  }
+
+  /**
+   * Get the form entity at a given namespace.
+   *
+   * @param string $namespace
+   */
+  public function getFormEntity($namespace = '') {
+    return $this->formEntities[$namespace];
   }
 
   /**

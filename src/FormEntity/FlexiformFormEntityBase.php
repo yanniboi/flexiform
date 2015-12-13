@@ -79,7 +79,7 @@ abstract class FlexiformFormEntityBase extends ContextAwarePluginBase implements
    * immediately and set this form entity as executed.
    */
   protected function initFormEntityContext($configuration) {
-    $context_definition = new ContextDefinition($configuration['entity_type'], $configuration['label']);
+    $context_definition = new ContextDefinition('entity:'.$configuration['entity_type'], $configuration['label']);
     $context_definition->addConstraint('Bundle', $configuration['bundle']);
     $this->formEntityContext = new Context($context_definition);
   }
@@ -107,6 +107,20 @@ abstract class FlexiformFormEntityBase extends ContextAwarePluginBase implements
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public function getEntityType() {
+    return $this->configuration['entity_type'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getBundle() {
+    return $this->configuration['bundle'];
+  }
+
+  /**
    * Prepare the form entity context.
    *
    * Attempt to find a value for the form entity context.
@@ -117,7 +131,7 @@ abstract class FlexiformFormEntityBase extends ContextAwarePluginBase implements
     }
 
     if ($entity = $this->getEntity()) {
-      $this->formEntityContext->setContextValue($entity);
+      $this->formEntityContext = Context::createFromContext($this->formEntityContext, $entity);
     }
 
     $this->prepared = TRUE;
