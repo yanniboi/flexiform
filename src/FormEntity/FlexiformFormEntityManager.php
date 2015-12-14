@@ -72,6 +72,7 @@ class FlexiformFormEntityManager {
       ),
       'entity' => $entity,
     ]);
+    $this->formEntities['']->getFormEntityContext();
 
     foreach ($this->formDisplay->getFormEntityConfig() as $namespace => $configuration) {
       $configuration['manager'] = $this;
@@ -104,6 +105,24 @@ class FlexiformFormEntityManager {
    */
   public function getFormEntity($namespace = '') {
     return $this->formEntities[$namespace];
+  }
+
+  /**
+   * Save the form entities.
+   *
+   * @param bool $save_base
+   *   Whether or not to save the base entity.
+   */
+  public function saveFormEntities($save_base = FALSE) {
+    foreach ($this->getFormEntities() as $namespace => $form_entity) {
+      if ($namespace == '' && !$save_base) {
+        continue;
+      }
+
+      if ($entity = $form_entity->getFormEntityContext()->getContextValue()) {
+        $entity->save();
+      }
+    }
   }
 
   /**

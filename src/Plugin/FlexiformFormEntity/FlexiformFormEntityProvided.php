@@ -29,7 +29,7 @@ class FlexiformFormEntityProvided extends FlexiformFormEntityBase {
   protected function getEntity() {
     if (isset($this->configuration['entity'])
         && $this->configuation['entity'] instanceof EntityInterface) {
-      return $entity;
+      return $this->configuration['entity'];
     }
   }
 }

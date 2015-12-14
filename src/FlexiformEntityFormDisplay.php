@@ -11,6 +11,7 @@ use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Render\Element;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\flexiform\FormEntity\FlexiformFormEntityManager;
 
@@ -35,12 +36,22 @@ class FlexiformEntityFormDisplay extends EntityFormDisplay implements FlexiformE
 
     // Set #parents to 'top-level' by default.
     $form += array('#parents' => array());
+    $original_parents = $form['#parents'];
 
     // Let each widget generate the form elements.
     foreach ($this->getComponents() as $name => $options) {
+      // On each component reset the parents back to the original.
+      $form['#parents'] = $original_parents;
+
       if ($widget = $this->getRenderer($name)) {
         if (strpos($name, ':')) {
           list($namespace, $field_name) = explode(':', $name, 2);
+
+          // This is a form entity element so we need to tweak parents so that
+          // form state values are grouped by entity namespace.
+          $form['#parents'][] = $namespace;
+
+          // Get the items from the entity manager.
           $items = $this->getFormEntityManager($entity)->getEntity($namespace)->get($field_name);
         }
         else {
@@ -64,11 +75,92 @@ class FlexiformEntityFormDisplay extends EntityFormDisplay implements FlexiformE
       }
     }
 
+    // Set form parents back to the original
+    $form['#parents'] = $original_parents;
+
     // Associate the cache tags for the form display.
     $this->renderer->addCacheableDependency($form, $this);
 
     // Add a process callback so we can assign weights and hide extra fields.
     $form['#process'][] = array($this, 'processForm');
+  }
+
+  /**
+   * {@inheritform}
+   */
+  public function processForm($element, FormStateInterface $form_state, $form) {
+    $element = parent::processForm($element, $form_state, $form);
+    static::addSaveFormEntitiesSubmit($element, $this);
+    return $element;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function extractFormValues(FieldableEntityInterface $entity, array &$form, FormStateInterface $form_state) {
+    $extracted = parent::extractFormValues($entity, $form, $form_state);
+
+    $original_parents = $form['#parents'];
+    foreach ($this->getFormEntityManager()->getFormEntities() as $namespace => $form_entity) {
+      // Skip base entity.
+      if ($namespace == '') {
+        continue;
+      }
+
+      // Tweak parents to make the field values detectable.
+      $form['#parents'] = $original_parents;
+      $form['#parents'][] = $namespace;
+
+      // Get the entity object.
+      $entity_object = $form_entity->getFormEntityContext()->getContextValue();
+      foreach ($entity_object as $field_name => $items) {
+        $element_name = $namespace.':'.$field_name;
+        if ($widget = $this->getRenderer($element_name)) {
+          $widget->extractFormValues($items, $form, $form_state);
+          $extracted[$element_name] = $element_name;
+        }
+      }
+    }
+    $form['#parents'] = $original_parents;
+
+    return $extracted;
+  }
+
+  /**
+   * Save the extra entities added to the form.
+   */
+  public function saveFormEntities(array $form, FormStateInterface $form_sate) {
+    $this->getFormEntityManager()->saveFormEntities();
+  }
+
+  /**
+   * Look through the form to find submit buttons, if they have the save submit
+   * method then add our saveEntities submit callback.
+   *
+   * @param array $element
+   *   The element to add the submit callback to. If this is not a submit
+   *   element then continue to search the children.
+   * @param \Drupal\flexiform\FlexiformEntityFormDisplayInterface $form_display
+   *   The flexiform entity form display.
+   */
+  public static function addSaveFormEntitiesSubmit(array &$element, FlexiformEntityFormDisplayInterface $form_display) {
+    if ($element['#type'] == 'submit') {
+      if (!empty($element['#submit']) && in_array('::save', $element['#submit'])) {
+        $new_submit = [];
+        foreach ($element['#submit'] as $callback) {
+          $new_submit[] = $callback;
+          if ($callback == '::save') {
+            $new_submit[] = [$form_display, 'saveFormEntities'];
+          }
+        }
+        $element['#submit'] = $new_submit;
+      }
+    }
+    else {
+      foreach (Element::children($element) as $key) {
+        FlexiformEntityFormDisplay::addSaveFormEntitiesSubmit($element[$key], $form_display);
+      }
+    }
   }
 
   /**
