@@ -9,12 +9,16 @@ namespace Drupal\flexiform;
 
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Plugin\Context\ContextAwarePluginManagerInterface;
+use Drupal\Core\Plugin\Context\ContextAwarePluginManagerTrait;
 use Drupal\Core\Plugin\DefaultPluginManager;
 
 /**
  * Provides a Flexiform form Entity Plugin Manager.
  */
-class FlexiformFormEntityPluginManager extends DefaultPluginManager {
+class FlexiformFormEntityPluginManager extends DefaultPluginManager implements ContextAwarePluginManagerInterface  {
+
+  use ContextAwarePluginManagerTrait;
 
   /**
    * Constructs a FlexiformFormEntityPluginManager object.

@@ -92,6 +92,17 @@ class FlexiformFormEntityManager {
   }
 
   /**
+   * Get the actual contexts.
+   */
+  public function getContexts() {
+    $contexts = [];
+    foreach ($this->formEntities as $namespace => $form_entity) {
+      $contexts[$namespace] = $form_entity->getFormEntityContext();
+    }
+    return $contexts;
+  }
+
+  /**
    * Get the form entities.
    */
   public function getFormEntities() {

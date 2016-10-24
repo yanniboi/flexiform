@@ -1,4 +1,14 @@
 services:
+  flexiform.subscriber:
+    class: Drupal\flexiform\Routing\RouteSubscriber
+    arguments: ['@entity.manager']
+    tags:
+     - { name: event_subscriber }
+  flexiform.route_enhancer:
+    class: Drupal\flexiform\Routing\FlexiformRouteEnhancer
+    arguments: ['@entity.manager']
+    tags:
+      - { name: route_enhancer }
   plugin.manager.flexiform_form_entity:
     class: Drupal\flexiform\FlexiformFormEntityPluginManager
     parent: default_plugin_manager

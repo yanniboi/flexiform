@@ -7,9 +7,12 @@
 
 namespace Drupal\flexiform\Form;
 
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\OpenModalDialogCommand;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\Context\ContextDefinition;
+use Drupal\Core\Url;
 use Drupal\ctools\Form\AjaxFormTrait;
 use Drupal\field_ui\Form\EntityFormDisplayEditForm;
 use Drupal\flexiform\FormEntity\FlexiformFormEntityInterface;
@@ -57,6 +60,8 @@ class FlexiformEntityFormDisplayEditForm extends EntityFormDisplayEditForm {
    */
   public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
+    $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
+    $form['#attached']['library'][] = 'core/drupal.ajax';
 
     // Add field rows from other entities.
     foreach ($this->getFormEntityFieldDefinitions() as $namespace => $definitions) {
@@ -69,10 +74,20 @@ class FlexiformEntityFormDisplayEditForm extends EntityFormDisplayEditForm {
       '#type' => 'container',
       '#tree' => TRUE,
     ];
-    $form['entities_section']['add_entity'] = [
+
+    // Prepare a link to add an entity to this form.
+    $target_entity_type = $this->entity->get('targetEntityType');
+    $target_entity_def = \Drupal::service('entity_type.manager')->getDefinition($target_entity_type);
+    $url_params = [
+      'form_mode_name' => $this->entity->get('mode'),
+    ];
+    if ($target_entity_def->get('bundle_entity_type')) {
+      $url_params[$target_entity_def->get('bundle_entity_type')] = $this->entity->get('bundle');
+    }
+    $form['entities_section']['add'] = [
       '#type' => 'link',
       '#title' => $this->t('Add Entity'),
-      '#url' => 'admin/structure',
+      '#url' => Url::fromRoute("entity.entity_form_display.{$target_entity_type}.form_mode.form_entity_add", $url_params),
       '#attributes' => $this->getAjaxButtonAttributes(),
       '#attached' => [
         'library' => [
@@ -105,8 +120,26 @@ class FlexiformEntityFormDisplayEditForm extends EntityFormDisplayEditForm {
       ];
     }
 
-    dpm($form);
     return $form;
+  }
+
+  /**
+   * Return an AJAX response to open the modal popup to add a form entity.
+   */
+  public function addFormEntity(array &$form, FormStateInterface $form_state) {
+    $content = \Drupal::formBuilder()->getForm('Drupal\flexiform\Form\FormEntityAddForm', $this->entity);
+    $content['#attached']['library'][] = 'core/drupal.dialog.ajax';
+    $content['#attached']['library'][] = 'core/drupal.ajax';
+
+    $response = new AjaxResponse();
+    $response->addCommand(new OpenModalDialogCommand($this->t('Add form entity'), $content, ['width' => 700]));
+    return $response;
+  }
+
+  /**
+   * Submit handler for adding a form entity.
+   */
+  public function addFormEntitySubmitForm(array $form, FormStateInterface $form_state) {
   }
 
   /**
@@ -301,7 +334,6 @@ class FlexiformEntityFormDisplayEditForm extends EntityFormDisplayEditForm {
     parent::copyFormValuesToEntity($entity, $form, $form_state);
 
     $form_values = $form_state->getValues();
-    dpm($form_values);
     // Add field rows from other entities.
     foreach ($this->getFormEntityFieldDefinitions() as $namespace => $definitions) {
       foreach ($definitions as $field_name => $field_definition) {
@@ -329,7 +361,6 @@ class FlexiformEntityFormDisplayEditForm extends EntityFormDisplayEditForm {
             $options['label'] = $values['label'];
           }
           $entity->setComponent($name, $options);
-          dpm($entity);
         }
       }
     }
