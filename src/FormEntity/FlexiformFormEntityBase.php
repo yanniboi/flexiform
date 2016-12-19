@@ -51,7 +51,7 @@ abstract class FlexiformFormEntityBase extends ContextAwarePluginBase implements
 
     // Map the parameters for this form entity plugin so that
     // ContextAwarePluginBase can use them.
-    $configuration['context'] = $this->mapFormEntityToContexts($configuration['context_map']);
+    $configuration['context'] = $this->mapFormEntityToContexts($configuration['map']);
 
   }
 
@@ -79,7 +79,7 @@ abstract class FlexiformFormEntityBase extends ContextAwarePluginBase implements
    * If the 'entity' key is set in the configuration then set the value
    * immediately and set this form entity as executed.
    */
-  protected function initFormEntityContext($configuration) {
+  protected function initFormEntityContext() {
     $context_definition = new ContextDefinition('entity:'.$this->getEntityType(), $this->getLabel());
     $context_definition->addConstraint('Bundle', [$this->getBundle()]);
     $this->formEntityContext = new Context($context_definition);

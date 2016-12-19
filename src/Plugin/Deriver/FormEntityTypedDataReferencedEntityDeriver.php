@@ -88,7 +88,9 @@ class FormEntityTypedDataReferencedEntityDeriver extends TypedDataPropertyDerive
         $this->derivatives[$base_data_type . ':' . $property_name . ':' . $bundle] = $derivative;
       }
       else {
+        $label = $derivative['label'];
         foreach ($this->entityBundleInfo->getBundleInfo($derivative['entity_type']) as $bundle => $info) {
+          $derivative['label'] = $label.' ('.$info['label'].')';
           $derivative['bundle'] = $bundle;
           $this->derivatives[$base_data_type . ':' . $property_name . ':' . $bundle] = $derivative;
         }
