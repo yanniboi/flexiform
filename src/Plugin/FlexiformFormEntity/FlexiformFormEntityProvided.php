@@ -17,7 +17,8 @@ use Drupal\flexiform\FormEntity\FlexiformFormEntityBase;
  *
  * @FlexiformFormEntity(
  *   id = "provided",
- *   label = @Translation("Provided Entity")
+ *   label = @Translation("Provided Entity"),
+ *   no_ui = true
  * )
  *
  */
@@ -31,5 +32,19 @@ class FlexiformFormEntityProvided extends FlexiformFormEntityBase {
         && $this->configuation['entity'] instanceof EntityInterface) {
       return $this->configuration['entity'];
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEntityType() {
+    return $this->configuration['entity_type'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getBundle() {
+    return $this->configuration['bundle'];
   }
 }

@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\flexiform\Plugin\FlexiformFormEntity\FlexiformFormEntityCurrentUser.
+ * Contains \Drupal\flexiform\Plugin\FlexiformFormEntity\FlexiformFormEntityReferencedEntity.
  */
 
 namespace Drupal\flexiform\Plugin\FlexiformFormEntity;
@@ -16,20 +16,16 @@ use Drupal\flexiform\FormEntity\FlexiformFormEntityBase;
  * like the base entity.
  *
  * @FlexiformFormEntity(
- *   id = "current_user",
- *   label = @Translation("Current User"),
- *   entity_type = "user",
- *   bundle = "user"
+ *   id = "referenced_entity",
+ *   deriver = "\Drupal\flexiform\Plugin\Deriver\FormEntityTypedDataReferencedEntityDeriver"
  * )
  *
  */
-class FlexiformFormEntityCurrentUser extends FlexiformFormEntityBase {
+class FlexiformFormEntityTypedDataReferencedEntity extends FlexiformFormEntityBase {
 
   /**
    * {@inheritdoc}
    */
   protected function getEntity() {
-    $uid = \Drupal::currentUser()->id();
-    return entity_load('user', $uid);
   }
 }

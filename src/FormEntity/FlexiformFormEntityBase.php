@@ -44,14 +44,15 @@ abstract class FlexiformFormEntityBase extends ContextAwarePluginBase implements
     // Set the form entity manager.
     $this->formEntityManager = $configuration['manager'];
 
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+
     // Initialise the form entity context object.
-    $this->initFormEntityContext($configuration);
+    $this->initFormEntityContext();
 
     // Map the parameters for this form entity plugin so that
     // ContextAwarePluginBase can use them.
     $configuration['context'] = $this->mapFormEntityToContexts($configuration['context_map']);
 
-    parent::__construct($configuration, $plugin_id, $plugin_definition);
   }
 
   /**
@@ -79,8 +80,8 @@ abstract class FlexiformFormEntityBase extends ContextAwarePluginBase implements
    * immediately and set this form entity as executed.
    */
   protected function initFormEntityContext($configuration) {
-    $context_definition = new ContextDefinition('entity:'.$configuration['entity_type'], $configuration['label']);
-    $context_definition->addConstraint('Bundle', $configuration['bundle']);
+    $context_definition = new ContextDefinition('entity:'.$this->getEntityType(), $this->getLabel());
+    $context_definition->addConstraint('Bundle', [$this->getBundle()]);
     $this->formEntityContext = new Context($context_definition);
   }
 
@@ -103,21 +104,21 @@ abstract class FlexiformFormEntityBase extends ContextAwarePluginBase implements
    * {@inheritdoc}
    */
   public function getLabel() {
-    return $this->pluginDefinition['label'];
+    return (!empty($this->configuration['label'])) ? $this->configuration['label'] : $this->pluginDefinition['label'];
   }
 
   /**
    * {@inheritdoc}
    */
   public function getEntityType() {
-    return $this->configuration['entity_type'];
+    return $this->pluginDefinition['entity_type'];
   }
 
   /**
    * {@inheritdoc}
    */
   public function getBundle() {
-    return $this->configuration['bundle'];
+    return $this->pluginDefinition['bundle'];
   }
 
   /**

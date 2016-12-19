@@ -22,11 +22,34 @@ use Drupal\flexiform\FormEntity\FlexiformFormEntityManager;
 class FlexiformEntityFormDisplay extends EntityFormDisplay implements FlexiformEntityFormDisplayInterface {
 
   /**
+   * The form entity configuration.
+   */
+  protected $formEntities = [];
+
+  /**
    * The flexiform form Entity Manager.
    *
    * @var \Drupal\flexiform\FormEntity\FlexiformFormEntityManager
    */
   protected $formEntityManager;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function preSave(EntityStorageInterface $storage, $update = TRUE) {
+    $this->setThirdPartySetting('flexiform', 'form_entities', $this->formEntities);
+    parent::preSave($storage, $update);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function postLoad(EntityStorageInterface $storage, array &$entities) {
+    foreach ($entities as $entity) {
+      $entity->initFormEntityConfig();
+    }
+    parent::postLoad($storage, $entities);
+  }
 
   /**
    * {@inheritdoc}
@@ -167,15 +190,32 @@ class FlexiformEntityFormDisplay extends EntityFormDisplay implements FlexiformE
    * {@inheritdoc}
    */
   public function getFormEntityConfig() {
-    return [
-      'current_user' => [
-        'plugin' => 'current_user',
-        'map' => [],
-        'entity_type' => 'user',
-        'bundle' => 'user',
-        'label' => 'Current User',
-      ],
-    ];
+    return $this->formEntities;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function addFormEntityConfig($namespace, $configuration) {
+    $this->formEntities[$namespace] = $configuration;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function removeFormEntityConfig($namespace) {
+    unset($this->formEntities[$namespace]);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function initFormEntityConfig() {
+    if ($form_entities = $this->getThirdPartySetting('flexiform', 'form_entities')) {
+      $this->formEntities = $form_entities;
+    }
   }
 
   /**
