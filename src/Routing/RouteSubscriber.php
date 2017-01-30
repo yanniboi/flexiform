@@ -52,6 +52,17 @@ class RouteSubscriber extends FieldUIRouteSubscriber {
           $options
         );
         $collection->add("entity.entity_form_display.{$entity_type_id}.form_mode.form_entity_add", $route);
+
+        $route = new Route(
+          "$path/form-display/{form_mode_name}/edit-form-entity/{entity_namespace}",
+          array(
+            '_form' => '\Drupal\flexiform\Form\FormEntityEditForm',
+            '_title' => 'Configure form entity',
+          ) + $defaults,
+          array('_field_ui_form_mode_access' => 'administer ' . $entity_type_id . ' form display'),
+          $options
+        );
+        $collection->add("entity.entity_form_display.{$entity_type_id}.form_mode.form_entity_edit", $route);
       }
     }
   }

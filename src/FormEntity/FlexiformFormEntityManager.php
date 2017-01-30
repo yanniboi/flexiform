@@ -98,6 +98,7 @@ class FlexiformFormEntityManager {
     $contexts = [];
     foreach ($this->formEntities as $namespace => $form_entity) {
       $contexts[$namespace] = $form_entity->getFormEntityContext();
+      $contexts[$namespace]->setEntityNamespace($namespace);
     }
     return $contexts;
   }
@@ -130,8 +131,8 @@ class FlexiformFormEntityManager {
         continue;
       }
 
-      if ($entity = $form_entity->getFormEntityContext()->getContextValue()) {
-        $entity->save();
+      if ($entity = $this->getEntity($namespace)) {
+        $form_entity->saveEntity($entity);
       }
     }
   }
@@ -147,7 +148,8 @@ class FlexiformFormEntityManager {
       throw new Exception($this->t('No entity at namespace :namespace', [':namespace' => $namespace]));
     }
 
-    return $this->formEntities[$namespace]->getFormEntityContext()->getContextValue();
+    $context = $this->formEntities[$namespace]->getFormEntityContext();
+    return $context->hasContextValue() ? $context->getContextValue() : NULL;
   }
 
 }

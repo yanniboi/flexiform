@@ -7,6 +7,7 @@
 
 namespace Drupal\flexiform\FormEntity;
 
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContextAwarePluginInterface;
 
 interface FlexiformFormEntityInterface extends ContextAwarePluginInterface {
@@ -37,5 +38,20 @@ interface FlexiformFormEntityInterface extends ContextAwarePluginInterface {
    * Get the bundle.
    */
   public function getBundle();
+
+  /**
+   * Prepare a configuration form.
+   */
+  public function configurationForm(array $form, FormStateInterface $form_state);
+
+  /**
+   * Validate the configuration form.
+   */
+  public function configurationFormValidate(array $form, FormStateInterface $form_state);
+
+  /**
+   * Submit the configuration form.
+   */
+  public function configurationFormSubmit(array $form, FormStateInterface $form_state);
 
 }

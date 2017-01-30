@@ -108,6 +108,21 @@ class FlexiformEntityFormDisplayEditForm extends EntityFormDisplayEditForm {
     ];
 
     foreach ($this->getFormEntityManager()->getFormEntities() as $namespace => $form_entity) {
+      $operations = [];
+      if (!empty($namespace)) {
+        $operation_params = $url_params;
+        $operation_params['entity_namespace'] = $namespace;
+
+        $operations['edit'] = [
+          'title' => $this->t('Edit'),
+          'weight' => 10,
+          'url' => Url::fromRoute(
+            "entity.entity_form_display.{$target_entity_type}.form_mode.form_entity_edit",
+            $operation_params
+          ),
+        ];
+      }
+
       $form['entities_section']['entities'][$namespace] = [
         'human_name' => [
           '#plain_text' => $form_entity->getFormEntityContextDefinition()->getLabel(),
@@ -116,7 +131,8 @@ class FlexiformEntityFormDisplayEditForm extends EntityFormDisplayEditForm {
           '#plain_text' => $form_entity->getLabel(),
         ],
         'operations' => [
-          '#plain_text' => 'Operations',
+          '#type' => 'operations',
+          '#links' => $operations,
         ],
       ];
     }
@@ -333,8 +349,8 @@ class FlexiformEntityFormDisplayEditForm extends EntityFormDisplayEditForm {
    */
   protected function copyFormValuesToEntity(EntityInterface $entity, array $form, FormStateInterface $form_state) {
     parent::copyFormValuesToEntity($entity, $form, $form_state);
-
     $form_values = $form_state->getValues();
+
     // Add field rows from other entities.
     foreach ($this->getFormEntityFieldDefinitions() as $namespace => $definitions) {
       foreach ($definitions as $field_name => $field_definition) {

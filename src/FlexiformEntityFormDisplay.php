@@ -75,7 +75,13 @@ class FlexiformEntityFormDisplay extends EntityFormDisplay implements FlexiformE
           $form['#parents'][] = $namespace;
 
           // Get the items from the entity manager.
-          $items = $this->getFormEntityManager($entity)->getEntity($namespace)->get($field_name);
+          if ($form_entity = $this->getFormEntityManager($entity)->getEntity($namespace)) {
+            $items = $form_entity->get($field_name);
+          }
+          else {
+            // Skip this component if we can't get hold of an entity.
+            continue;
+          }
         }
         else {
           $items = $entity->get($name);
@@ -130,6 +136,11 @@ class FlexiformEntityFormDisplay extends EntityFormDisplay implements FlexiformE
         continue;
       }
 
+      // Skip any entity that didn't have a value.
+      if (!$form_entity->getFormEntityContext()->hasContextValue()) {
+        continue;
+      }
+
       // Tweak parents to make the field values detectable.
       $form['#parents'] = $original_parents;
       $form['#parents'][] = $namespace;
@@ -152,7 +163,7 @@ class FlexiformEntityFormDisplay extends EntityFormDisplay implements FlexiformE
   /**
    * Save the extra entities added to the form.
    */
-  public function saveFormEntities(array $form, FormStateInterface $form_sate) {
+  public function saveFormEntities(array $form, FormStateInterface $form_state) {
     $this->getFormEntityManager()->saveFormEntities();
   }
 

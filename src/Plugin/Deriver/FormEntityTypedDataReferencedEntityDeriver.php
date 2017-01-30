@@ -72,7 +72,7 @@ class FormEntityTypedDataReferencedEntityDeriver extends TypedDataPropertyDerive
         '@base' => $data_type_definition['label'],
       ]);
 
-      $context_definition = new ContextDefinition($base_data_type, $this->typedDataManager->createDataDefinition($base_data_type));
+      $context_definition = new ContextDefinition($base_data_type, $data_type_definition['label'], TRUE);
       // Add the constraints of the base definition to the context definition.
       if ($base_definition->getConstraint('Bundle')) {
         $context_definition->addConstraint('Bundle', $base_definition->getConstraint('Bundle'));
