@@ -1,0 +1,21 @@
+# Schema for configuration files of the Flexiform module.
+
+core.entity_form_display.*.*.*.third_party.flexiform:
+  type: mapping
+  label: 'Flexiform display settings'
+  mapping:
+    form_entities:
+      type: sequence
+      label: 'Form entities'
+      sequence:
+        type: flexiform_form_entity
+
+flexiform_form_entity:
+  type: mapping
+  mapping:
+    label:
+      type: string
+      label: 'Label'
+    plugin:
+      type: string
+      label: 'Plugin'
