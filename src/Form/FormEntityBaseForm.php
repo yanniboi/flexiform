@@ -132,7 +132,9 @@ abstract class FormEntityBaseForm extends FormBase implements FormEntityBaseForm
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    $this->formEntity->configurationFormValidate($form['configuration'], $form_state);
+    if (!empty($this->formEntity)) {
+      $this->formEntity->configurationFormValidate($form['configuration'], $form_state);
+    }
   }
 
   /**
