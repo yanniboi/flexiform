@@ -68,7 +68,9 @@ class FlexiformEntityFormDisplay extends EntityFormDisplay implements FlexiformE
 
       if ($widget = $this->getRenderer($name)) {
         if (strpos($name, ':')) {
-          list($namespace, $field_name) = explode(':', $name, 2);
+          $parts = explode(':', $name);
+          $field_name = array_pop($parts);
+          $namespace = implode(':', $parts);
 
           // This is a form entity element so we need to tweak parents so that
           // form state values are grouped by entity namespace.
@@ -242,6 +244,28 @@ class FlexiformEntityFormDisplay extends EntityFormDisplay implements FlexiformE
       list($namespace, $form_entity_field_name) = explode(':', $field_name, 2);
       return $this->getFormEntityFieldDefinition($namespace, $form_entity_field_name);
     }
+  }
+
+
+  /**
+   * {@inheritform}
+   */
+  protected function getFieldDefinitions() {
+    $definitions = parent::getFieldDefinitions();
+
+    foreach ($this->formEntities as $namespace => $entity) {
+      $parts = explode(':', $entity['plugin']);
+      if ($parts[0] == 'referenced_entity') {
+        $entity_type = $parts[2];
+        $referenced_definitions = \Drupal::entityManager()->getFieldDefinitions('profile', $parts[4]);
+        foreach ($referenced_definitions as $field_name => $definition) {
+          $definitions[$namespace . ':' . $field_name] = $definition;
+        }
+      }
+    }
+    $this->fieldDefinitions = $definitions;
+
+    return $this->fieldDefinitions;
   }
 
   /**
