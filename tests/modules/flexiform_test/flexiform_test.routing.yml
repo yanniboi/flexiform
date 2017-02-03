@@ -1,0 +1,7 @@
+flexiform_test.user_compare_form:
+  path: '/test/user-compare'
+  defaults:
+   _entity_form: user.compare
+   _title: 'Compare users'
+  requirements:
+    _access: "TRUE"

@@ -1,0 +1,39 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_form_mode.user.compare
+    - field.field.user.user.field_name
+  module:
+    - flexiform
+    - user
+third_party_settings:
+  flexiform:
+    form_entities:
+      current_user_0:
+        label: 'Current User'
+        plugin: current_user
+id: user.user.compare
+targetEntityType: user
+bundle: user
+mode: compare
+content:
+  'current_user_0:field_name':
+    type: string_textfield
+    weight: 3
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  field_name:
+    type: string_textfield
+    weight: 2
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+hidden:
+  account: true
+  contact: true
+  language: true
+  timezone: true

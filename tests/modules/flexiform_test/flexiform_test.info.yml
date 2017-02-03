@@ -1,0 +1,9 @@
+name: 'Flexiform module tests'
+type: module
+description: 'Support module for flexiform related testing.'
+core: 8.x
+
+dependencies:
+  - flexiform
+  - user
+  - field

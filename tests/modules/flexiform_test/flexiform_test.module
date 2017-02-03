@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Helper module for the Flexiform tests.
+ */
+
+/**
+ * Implements hook_entity_type_build().
+ */
+function flexiform_test_entity_type_build(array &$entity_types) {
+  $entity_types['user']->setFormClass('compare', 'Drupal\Core\Entity\ContentEntityForm');
+}
