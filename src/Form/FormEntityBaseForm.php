@@ -1,28 +1,21 @@
 <?php
+
 namespace Drupal\flexiform\Form;
 
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\CloseModalDialogCommand;
-use Drupal\Core\Ajax\SetDialogTitleCommand;
-use Drupal\Core\Ajax\ReplaceCommand;
-use Drupal\Core\Ajax\RedirectCommand;
+use Drupal\Core\Entity\Display\EntityFormDisplayInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\flexiform\FlexiformEntityFormDisplayInterface;
 use Drupal\flexiform\FlexiformFormEntityPluginManager;
 use Drupal\flexiform\FormEntity\FlexiformFormEntityInterface;
-use Drupal\flexiform\FormEntity\FlexiformFormEntityManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-abstract class FormEntityBaseForm extends FormBase {
+abstract class FormEntityBaseForm extends FormBase implements FormEntityBaseFormInterface {
 
   /**
-   * @var \Drupal\flexiform\FlexiformEntityFormDisplay
-   */
-  protected $formDisplay;
-
-  /**
-   * @var \Drupal\flexiform\FlexiformFormEntityInterface
+   * @var \Drupal\flexiform\FormEntity\FlexiformFormEntityInterface
    */
   protected $formEntity;
 
@@ -50,11 +43,27 @@ abstract class FormEntityBaseForm extends FormBase {
   /**
    * Get the form entity manager.
    *
-   * @return \Drupal\flexiform\FlexiformFormEntityManager
+   * @return \Drupal\flexiform\FormEntity\FlexiformFormEntityManager
    */
-  protected function formEntityManager() {
-    return $this->formDisplay->getFormEntityManager();
+  protected function getFormEntityManager($form_state) {
+    return $this->getFormDisplay($form_state)->getFormEntityManager();
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getFormDisplay(FormStateInterface $form_state) {
+    return $form_state->get('form_display');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setFormDisplay(EntityFormDisplayInterface $form_display, FormStateInterface $form_state) {
+    $form_state->set('form_display', $form_display);
+    return $this;
+  }
+
 
   /**
    * Build the plugin configuration form.
@@ -115,7 +124,7 @@ abstract class FormEntityBaseForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, FlexiformEntityFormDisplayInterface $form_display = NULL) {
-    $this->formDisplay = $form_display;
+    $this->setFormDisplay($form_display, $form_state);
     return $form;
   }
 
@@ -139,9 +148,9 @@ abstract class FormEntityBaseForm extends FormBase {
     if ($plugin_conf = $form_state->getValue('configuration')) {
       $configuration += $plugin_conf;
     }
-
-    $this->formDisplay->addFormEntityConfig($namespace, $configuration);
-    $this->formDisplay->save();
+    $form_display = $this->getFormDisplay($form_state);
+    $form_display->addFormEntityConfig($namespace, $configuration);
+    $form_display->save();
   }
 
   /**
@@ -157,7 +166,7 @@ abstract class FormEntityBaseForm extends FormBase {
    * Check whether the namespace already exists.
    */
   public function namespaceExists($namespace, $element, FormStateInterface $form_state) {
-    $entities = $this->formDisplay->getFormEntityConfig();
+    $entities = $this->getFormDisplay($form_state)->getFormEntityConfig();
     return !empty($entities[$namespace]);
   }
 }
